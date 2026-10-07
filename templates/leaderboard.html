@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Quantile · Travel Value Leaderboard{% endblock %}
+
+{% block content %}
+<h1>Where does your money go further than usual?</h1>
+<p class="lede">
+  Destinations ranked by how today's exchange rate compares with its own history,
+  adjusted for inflation at home and abroad.
+</p>
+
+<div class="toolbar">
+  <div class="control">
+    <span class="t-label" id="base-label">Home currency</span>
+    <div class="segmented" data-control="base" role="group" aria-labelledby="base-label"></div>
+  </div>
+  <div class="control">
+    <span class="t-label" id="period-label">Compared with</span>
+    <div class="segmented" data-control="period" role="group" aria-labelledby="period-label"></div>
+  </div>
+</div>
+
+<div id="board-alert"></div>
+<div class="board-meta" id="board-meta" aria-live="polite"></div>
+
+<div class="state" id="board-state">
+  <div class="state-title" id="board-state-title">Loading exchange-rate history…</div>
+  <div class="small" id="board-state-detail">The first load fetches up to 10 years of daily rates from central-bank sources and takes about 20 seconds.</div>
+  <div class="progress" aria-hidden="true"></div>
+</div>
+
+<div id="board-body" hidden>
+  <table class="board board-table">
+    <caption class="sr-only">Travel Value Leaderboard</caption>
+    <thead>
+      <tr>
+        <th class="left" scope="col">#</th>
+        <th class="left" scope="col">Destination</th>
+        <th scope="col">Score<span class="info"><button type="button" class="info-btn" aria-label="About the Quantile Score">i</button>
+          <span class="info-pop" role="tooltip">Quantile Score, 0–100. Half is how rare today's inflation-adjusted rate is within the period, half is how large the advantage over the average is (+20% or more scores full marks).</span></span></th>
+        <th scope="col" id="spark-head">Past 5 years</th>
+        <th scope="col">Percentile<span class="info"><button type="button" class="info-btn" aria-label="About FX percentile">i</button>
+          <span class="info-pop" role="tooltip">FX percentile: how today's exchange rate ranks against every trading day in the period. 90th means today beats 90% of days.</span></span></th>
+        <th scope="col">vs avg<span class="info"><button type="button" class="info-btn" aria-label="About vs historical average">i</button>
+          <span class="info-pop" role="tooltip">How much more (or less) foreign currency your home currency buys today than its average over the period.</span></span></th>
+        <th scope="col">Real purchasing power<span class="info"><button type="button" class="info-btn" aria-label="About real purchasing power">i</button>
+          <span class="info-pop" role="tooltip">The same comparison after adjusting for inflation at home and in the destination: how much further your money goes than usual.</span></span></th>
+      </tr>
+    </thead>
+    <tbody id="board-rows"></tbody>
+  </table>
+  <ul class="board-cards" id="board-cards"></ul>
+  <div class="notes" id="board-notes"></div>
+</div>
+
+<section class="section" aria-labelledby="how-title">
+  <div class="section-head"><h2 id="how-title">How the ranking works</h2></div>
+  <div class="method">
+    <div>
+      <h3><span class="step">1</span>Where today sits</h3>
+      <p>Every weekday exchange rate in the period is compared with today's. The share of days today beats is the
+        <strong>FX percentile</strong>.</p>
+    </div>
+    <div>
+      <h3><span class="step">2</span>Adjust for inflation</h3>
+      <p>Past rates are restated in today's prices using inflation at home and in the destination, so a currency that
+        fell only because prices soared isn't mistaken for a bargain.</p>
+    </div>
+    <div>
+      <h3><span class="step">3</span>Score</h3>
+      <p>The <strong>Quantile Score</strong> is half how rare today's inflation-adjusted rate is, half how large its
+        advantage over the period average is.</p>
+    </div>
+  </div>
+  <p class="fineprint">
+    Rates are mid-market reference rates; banks and cards add a margin. Inflation covers whole economies, not just
+    tourist prices. Quantile describes the past and makes no forecast.
+  </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/leaderboard.js') }}"></script>
+{% endblock %}

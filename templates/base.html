@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Quantile{% endblock %}</title>
+  <meta name="description" content="Quantile ranks travel destinations by how far your home currency goes today compared with its own history.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/quantile.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <span class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Quantile</span>
+      <nav class="nav" aria-label="Main">
+        <a href="/" id="nav-leaderboard" {% if active == 'leaderboard' %}aria-current="page"{% endif %}>Leaderboard</a>
+        <a href="/converter" {% if active == 'converter' %}aria-current="page"{% endif %}>Converter</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      Exchange rates: <a href="https://frankfurter.dev" rel="noopener">Frankfurter</a> (central-bank reference rates).
+      Inflation: <a href="https://data.imf.org/en/datasets/IMF.STA:CPI" rel="noopener">IMF Consumer Price Index</a>.
+      Quantile shows historical context, not financial advice or a forecast.
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', path='js/common.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

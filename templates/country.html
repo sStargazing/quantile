@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Quantile · {{ destination.display_name }} ({{ destination.currency_code }}){% endblock %}
+
+{% block content %}
+<div class="country-head">
+  <div>
+    <div class="country-title">
+      <span class="flag" aria-hidden="true">{{ destination.flag }}</span>
+      <h1>{{ destination.display_name }}</h1>
+    </div>
+    <div class="country-sub">{{ destination.currency_name }} · {{ destination.currency_code }}<span id="shared-note"></span></div>
+  </div>
+  <div class="score-block" id="score-block" hidden>
+    <div class="t-label">Quantile Score</div>
+    <div class="t-score" id="score-value"></div>
+    <div class="rank-line" id="score-rank"></div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="control">
+    <span class="t-label" id="base-label">Home currency</span>
+    <div class="segmented" data-control="base" role="group" aria-labelledby="base-label"></div>
+  </div>
+  <div class="control">
+    <span class="t-label" id="period-label">Compared with</span>
+    <div class="segmented" data-control="period" role="group" aria-labelledby="period-label"></div>
+  </div>
+</div>
+
+<div class="state" id="country-state" style="margin-top:28px">
+  <div class="state-title" id="state-title">Loading {{ destination.currency_code }} history…</div>
+  <div class="small" id="state-detail">The first load fetches up to 10 years of daily rates from central-bank sources and takes about 20 seconds.</div>
+  <div class="progress" id="state-progress" aria-hidden="true"></div>
+  <div class="actions" id="state-actions" hidden></div>
+</div>
+
+<div id="country-body" hidden>
+  <div class="statement">
+    <p class="t-title" id="headline"></p>
+    <p id="explanation"></p>
+  </div>
+  <div id="country-alert"></div>
+
+  <div class="figures" id="figures"></div>
+
+  <section class="section" aria-labelledby="chart-title">
+    <div class="section-head">
+      <h2 id="chart-title"></h2>
+      <div class="chart-controls">
+        <label class="toggle"><input type="checkbox" id="show-real"> Past rates in today's prices</label>
+        <div class="segmented" data-control="period" role="group" aria-label="Chart period"></div>
+      </div>
+    </div>
+    <div class="chart-legend" id="chart-legend"></div>
+    <div class="chart" id="chart"></div>
+    <div class="chart-foot"><span id="chart-note"></span><span id="chart-count"></span></div>
+    <details class="table-view small" style="margin-top:8px">
+      <summary>Chart data as a table</summary>
+      <div class="table-scroll"><table id="chart-table"></table></div>
+    </details>
+  </section>
+
+  <div class="split">
+    <section class="section" aria-labelledby="stats-title">
+      <div class="section-head"><h2 id="stats-title">Statistics</h2><p class="small muted" id="stats-sub"></p></div>
+      <table class="stats" id="stats"></table>
+    </section>
+
+    <section class="section" aria-labelledby="infl-title" id="inflation-section">
+      <div class="section-head"><h2 id="infl-title">Inflation adjustment</h2><p class="small muted" id="infl-sub"></p></div>
+      <p class="prose">
+        Exchange rates show how much foreign currency your money buys, but prices inside each country change too.
+        Quantile restates every past rate in today's prices using inflation at home and in the destination, then
+        compares today's rate with that adjusted average.
+      </p>
+      <div class="bridge" id="bridge"></div>
+      <table class="stats" id="inflation-table"></table>
+      <p class="prose small" id="inflation-note" style="margin-top:12px"></p>
+    </section>
+  </div>
+
+  <section class="section" aria-labelledby="score-title" id="score-section">
+    <div class="section-head"><h2 id="score-title">Why this score</h2><p class="small muted" id="score-method"></p></div>
+    <div class="components" id="components"></div>
+  </section>
+
+  <section class="section" aria-labelledby="data-title">
+    <div class="section-head"><h2 id="data-title">Data and assumptions</h2></div>
+    <div class="facts">
+      <dl id="data-facts"></dl>
+      <ul id="assumptions"></ul>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.QUANTILE_DESTINATION = {{ {"id": destination.id, "currency": destination.currency_code} | tojson }};</script>
+<script src="{{ url_for('static', path='js/chart.js') }}"></script>
+<script src="{{ url_for('static', path='js/country.js') }}"></script>
+{% endblock %}

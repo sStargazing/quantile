@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Quantile · Converter{% endblock %}
+
+{% block content %}
+<h1>Converter</h1>
+<p class="lede">Convert at the latest daily reference rate.</p>
+
+<form class="converter" id="convert-form">
+  <label><span class="t-label">From</span><select id="from"></select></label>
+  <label><span class="t-label">Amount</span><input id="amount" type="number" min="0" step="0.01" value="100" inputmode="decimal" style="width:9rem"></label>
+  <label><span class="t-label">To</span><select id="to"></select></label>
+  <button class="button" type="submit">Convert</button>
+</form>
+
+<div class="converter-result" aria-live="polite">
+  <div id="result" class="t-title num">Choose currencies and press Convert.</div>
+  <div id="details" class="muted small" style="margin-top:4px"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  "use strict";
+  const from = document.getElementById("from");
+  const to = document.getElementById("to");
+  const amount = document.getElementById("amount");
+  const result = document.getElementById("result");
+  const details = document.getElementById("details");
+
+  async function init() {
+    const [homes, destinations] = await Promise.all([Q.fetchJSON("/api/currencies"), Q.fetchJSON("/api/destinations")]);
+    for (const h of homes) from.appendChild(Q.el("option", { value: h.code }, h.code + " — " + h.currency_name));
+    const seen = new Set();
+    for (const d of destinations) {
+      if (seen.has(d.currency_code)) continue;
+      seen.add(d.currency_code);
+      to.appendChild(Q.el("option", { value: d.currency_code }, d.currency_code + " — " + d.currency_name));
+    }
+    from.value = Q.readSelection({ base: "AUD", period: "5y" }).base;
+    to.value = "JPY";
+  }
+
+  async function convert(ev) {
+    ev.preventDefault();
+    result.textContent = "Converting…";
+    details.textContent = "";
+    try {
+      const q = new URLSearchParams({ base: from.value, to: to.value, amount: amount.value });
+      const data = await Q.fetchJSON("/api/convert?" + q);
+      const converted = data.result.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      result.textContent = data.amount.toLocaleString() + " " + data.base + " = " + converted + " " + data.to;
+      details.textContent = "Rate " + Q.fmt.rate(data.rate) + " · reference rate for " + Q.fmt.date(data.date);
+    } catch (e) {
+      result.textContent = e.message;
+    }
+  }
+
+  document.getElementById("convert-form").addEventListener("submit", convert);
+  init().catch(e => { result.textContent = e.message; });
+})();
+</script>
+{% endblock %}
