@@ -129,7 +129,7 @@ tests/
 | `GET /api/options` | Home currencies, periods, defaults (for the selectors) |
 | `GET /api/currencies` | Home currencies |
 | `GET /api/destinations` | Destination configuration |
-| `GET /api/leaderboard?base=AUD&period=5y` | Ranked destinations with all metrics, score components, explanations and data quality |
+| `GET /api/leaderboard?base=AUD&period=5y` (period: `1y`, `3y`, `5y`, `10y`, `max`) | Ranked destinations with all metrics, score components, explanations and data quality |
 | `GET /api/country/{slug or ISO2}?base=AUD&period=5y` | Full analysis for one destination: headline, statistics, inflation breakdown, score breakdown, chart series, sources, assumptions |
 | `GET /api/history/{AUD-JPY}?period=5y&max_points=500` | Raw daily history for any configured pair |
 | `GET /api/convert?base=AUD&to=JPY&amount=100` | Conversion at the latest rate (the original calculator) |
@@ -197,6 +197,15 @@ provider quotes them.
 * **Window:** the latest observation date `T` (today, normally) and the same
   calendar date *N* years earlier. "Today's rate" `R_today` is the latest
   observation.
+* **MAX** is the longest window every destination can be compared over: it
+  starts at the latest first-available CPI period across all configured areas.
+  Inflation data, not exchange rates, is the limit: every currency has daily
+  rates from 1999, but Egypt, the Philippines and Thailand have CPI only from
+  January 2010, so MAX currently runs from 1 Jan 2010. All destinations share
+  this one window so rankings stay comparable, and it is the same for every home
+  currency. An area whose CPI starts less than 10 years back is left out of the
+  calculation, so a newly added short-history destination shows as "not ranked"
+  for MAX instead of shrinking it below 10Y (`AnalysisService.max_window_start`).
 
 ### 2. Nominal metrics (`analytics/fx_metrics.py`)
 

@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.api import countries, currencies, leaderboard
-from app.config.destinations import PERIODS, all_cpi_series, all_currency_codes, get_destination
+from app.config.destinations import DEFAULT_PERIOD, all_cpi_series, all_currency_codes, get_destination, get_period
 from app.providers.base import ProviderError
 from app.providers.frankfurter import FrankfurterProvider
 from app.providers.imf import ImfCpiProvider
@@ -25,6 +25,7 @@ from app.services.inflation import InflationService
 from app.settings import ROOT_DIR, settings
 
 log = logging.getLogger("quantile")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
 
 @asynccontextmanager
@@ -38,11 +39,10 @@ async def lifespan(app: FastAPI):
 
         prewarm = None
         if settings.prewarm_on_startup:
-            longest = max(PERIODS, key=lambda p: p.years)
-
             async def warm():
                 try:
-                    await app.state.analysis.prewarm(longest)
+                    # the default view first, then MAX (which covers every shorter period)
+                    await app.state.analysis.prewarm(get_period(DEFAULT_PERIOD), get_period("max"))
                     log.info("data cache warmed")
                 except Exception:
                     log.warning("could not prewarm data cache", exc_info=True)

@@ -134,7 +134,12 @@
     if (Math.abs(pct) < 0.05) return base + " buys about the same " + quote + " as its " + reference;
     return base + " buys " + fmt1.format(Math.abs(pct)) + "% " + (pct > 0 ? "more " : "less ") + quote + " than its " + reference;
   }
-  function periodWord(p) { return p.years === 1 ? "1-year" : p.years + "-year"; }
+  /* Period wording comes from the API (period.average, period.heading, …) because
+     MAX is described by its actual start date. These only adjust case. */
+  function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+  function lowerFirst(s) { return s ? s[0].toLowerCase() + s.slice(1) : s; }
+  /* For loading messages, before the window is known: "past 5 years" / "full history" */
+  function loadingSpan(p) { return p && p.years ? p.label.toLowerCase() : "full history"; }
   function direction(v) { return v == null || Math.abs(v) < 0.05 ? "" : (v > 0 ? "up" : "down"); }
 
   const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -182,7 +187,7 @@
 
   window.Q = {
     fetchJSON, readSelection, writeSelection, selectionQuery, syncNav, buildControls, setControls,
-    fmt: { rate, signedPct, signedPts, pct, score, ordinal, direction, date, month, cpiPeriod, buysVs, periodWord },
+    fmt: { rate, signedPct, signedPts, pct, score, ordinal, direction, date, month, cpiPeriod, buysVs, cap, lowerFirst, loadingSpan },
     el, notice,
   };
 })();

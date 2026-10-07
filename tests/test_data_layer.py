@@ -56,8 +56,39 @@ def test_frankfurter_normalises_records_per_quote():
 
 
 def test_frankfurter_errors_become_provider_errors():
+    provider = _frankfurter({"detail": "down"}, status=503)
+    provider._retry_delay = 0
     with pytest.raises(ProviderError):
-        asyncio.run(_frankfurter({"detail": "down"}, status=503).fetch_range("USD", ["JPY"], date(2024, 1, 1), date(2024, 1, 2)))
+        asyncio.run(provider.fetch_range("USD", ["JPY"], date(2024, 1, 1), date(2024, 1, 2)))
+
+
+def test_frankfurter_retries_transient_failures():
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append(1)
+        if len(calls) == 1:
+            raise httpx.ReadTimeout("slow", request=request)
+        if len(calls) == 2:
+            return httpx.Response(429, json={"detail": "slow down"})
+        return httpx.Response(200, json=[{"date": "2024-01-02", "base": "USD", "quote": "JPY", "rate": 140.5}])
+
+    provider = FrankfurterProvider(httpx.AsyncClient(transport=httpx.MockTransport(handler)), "https://fx.test/v2", retry_delay=0)
+    out = asyncio.run(provider.fetch_range("USD", ["JPY"], date(2024, 1, 1), date(2024, 1, 2)))
+    assert out["JPY"].rates == (140.5,) and len(calls) == 3
+
+
+def test_frankfurter_does_not_retry_client_errors():
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append(1)
+        return httpx.Response(422, json={"detail": "bad currency"})
+
+    provider = FrankfurterProvider(httpx.AsyncClient(transport=httpx.MockTransport(handler)), "https://fx.test/v2", retry_delay=0)
+    with pytest.raises(ProviderError):
+        asyncio.run(provider.fetch_range("USD", ["XXX"], date(2024, 1, 1), date(2024, 1, 2)))
+    assert len(calls) == 1
 
 
 def test_cache_serves_stale_value_when_refresh_fails(tmp_path):

@@ -40,3 +40,31 @@ def test_map_page_and_shared_data(make_client):
     assert len(ids) == len(set(ids))  # keyed by country, not currency (France ≠ Italy)
     euro = {e["destination"]["id"]: e["quantile_score"] for e in board["entries"] if e["destination"]["currency_code"] == "EUR"}
     assert len(euro) == 4
+
+
+def test_max_window_starts_where_every_destination_has_inflation_data():
+    from datetime import date
+
+    from app.config.destinations import all_cpi_series
+    from app.services.analysis import AnalysisService
+    from app.services.inflation import CpiDataset
+    from tests.helpers import cpi
+
+    def series(start_year, months=400):
+        values = {f"{start_year + m // 12}-M{m % 12 + 1:02d}": 100.0 + m for m in range(months)}
+        return values
+
+    data = {}
+    for code, idx in all_cpi_series():
+        start = 2010 if code == "EGY" else 2000
+        data[(code, idx, "M")] = cpi(code, series(start, (2027 - start) * 12), index_type=idx)
+    end = date(2026, 10, 7)
+    assert AnalysisService.max_window_start(CpiDataset(data), end) == date(2010, 1, 1)
+
+    # A destination whose CPI starts after the 10-year mark doesn't drag MAX below 10 years.
+    data[("EGY", "CPI", "M")] = cpi("EGY", series(2020, 82))
+    assert AnalysisService.max_window_start(CpiDataset(data), end) == date(2000, 1, 1)
+    del data[("EGY", "CPI", "M")]
+    for key in list(data):
+        data[key] = cpi(key[0], series(2019, 94), index_type=key[1])
+    assert AnalysisService.max_window_start(CpiDataset(data), end) == date(2016, 10, 7)  # floor = 10 years

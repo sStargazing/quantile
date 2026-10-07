@@ -64,7 +64,7 @@ def make_client(tmp_path, monkeypatch):
     def build(fx_handler=fake_fx, cpi_handler=None):
         cache = FileCache(tmp_path / f"cache{len(clients)}")
         fx = ExchangeRateService(
-            FrankfurterProvider(httpx.AsyncClient(transport=httpx.MockTransport(fx_handler)), "https://fx.test/v2"),
+            FrankfurterProvider(httpx.AsyncClient(transport=httpx.MockTransport(fx_handler)), "https://fx.test/v2", retry_delay=0),
             cache,
             all_currency_codes(),
         )

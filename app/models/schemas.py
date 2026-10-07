@@ -17,7 +17,13 @@ class HomeCurrencyOut(BaseModel):
 class PeriodOut(BaseModel):
     key: str
     label: str
-    years: int
+    years: int | None  # None for MAX
+    # Filled in on analysis responses, where the actual window is known:
+    start: date | None = None
+    within: str | None = None  # "in the past 5 years" / "since Jan 2010"
+    heading: str | None = None  # "Past 5 years" / "Since Jan 2010"
+    average: str | None = None  # "5-year average" / "average since Jan 2010"
+    average_short: str | None = None  # "5-year avg" / "avg since 2010"
 
 
 class DestinationOut(BaseModel):

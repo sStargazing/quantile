@@ -81,3 +81,18 @@ def test_validation_errors_are_readable(make_client):
     assert client.get("/api/country/atlantis").status_code == 404
     same = client.get("/api/country/australia", params={"base": "AUD"})
     assert same.status_code == 404 and "home currency" in same.json()["detail"]
+
+
+def test_max_period_uses_one_common_window(make_client):
+    client = make_client()
+    board = client.get("/api/leaderboard", params={"base": "AUD", "period": "max"}).json()
+    period = board["period"]
+    # Synthetic CPI starts in Jan 2014 for every area, so MAX starts there.
+    assert period["key"] == "max" and period["years"] is None
+    assert board["window_start"] == period["start"] == "2014-01-01"
+    assert period["within"] == "since Jan 2014" and period["average"] == "average since Jan 2014"
+    assert all(e["status"] == "ranked" for e in board["entries"])
+    top = board["entries"][0]["destination"]["id"]
+    detail = client.get(f"/api/country/{top}", params={"base": "AUD", "period": "max"}).json()
+    assert detail["headline"].endswith("since Jan 2014.")
+    assert detail["fx"]["first_date"] >= "2014-01-01"

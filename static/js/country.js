@@ -34,7 +34,7 @@
   function render(d) {
     lastData = d;
     const base = d.base.code, quote = d.destination.currency_code;
-    const pw = fmt.periodWord(d.period);
+    const avg = d.period.average;
 
     $("shared-note").textContent = d.shares_currency_with.length
       ? " · same currency as " + d.shares_currency_with.join(", ") + " (identical exchange-rate figures; inflation differs)"
@@ -69,16 +69,16 @@
 
     $("figures").replaceChildren(
       figure("1 " + base + " buys", fmt.rate(fx.current_rate), quote, "Reference rate, " + fmt.date(fx.current_date)),
-      figure(pw + " average", fmt.rate(fx.average), quote, fmt.buysVs(base, quote, fx.vs_average_pct, pw + " average")),
+      figure(avg, fmt.rate(fx.average), quote, fmt.buysVs(base, quote, fx.vs_average_pct, avg)),
       figure("FX percentile", fmt.ordinal(fx.percentile), null, fx.share_equal_pct >= 50
         ? "Unchanged on " + Math.floor(fx.share_equal_pct) + "% of " + fx.observations.toLocaleString() + " trading days"
         : "Better than " + Math.floor(fx.share_below_pct) + "% of " + fx.observations.toLocaleString() + " trading days"),
       inf
         ? figure("After inflation", fmt.signedPct(inf.real_vs_average_pct), null,
-            goesFurther(inf.real_vs_average_pct, "inflation-adjusted " + pw + " average"), fmt.direction(inf.real_vs_average_pct))
+            goesFurther(inf.real_vs_average_pct, "inflation-adjusted " + avg), fmt.direction(inf.real_vs_average_pct))
         : figure("After inflation", "—", null, "No inflation data for this period"));
 
-    $("chart-title").textContent = base + "/" + quote + ", " + d.period.label.toLowerCase();
+    $("chart-title").textContent = base + "/" + quote + ", " + fmt.lowerFirst(d.period.heading);
     $("chart-note").textContent = quote + " per 1 " + base + " · higher is better for you";
     $("chart-count").textContent = d.chart.downsampled
       ? "Showing " + d.chart.points.length + " of " + d.chart.total_observations.toLocaleString() + " daily rates; all are used in the calculations"
@@ -91,7 +91,7 @@
     const rows = [
       groupRow(quote + " per " + base),
       statRow("Today", fmt.rate(fx.current_rate)),
-      statRow(pw[0].toUpperCase() + pw.slice(1) + " average", fmt.rate(fx.average)),
+      statRow(fmt.cap(avg), fmt.rate(fx.average)),
       statRow("Median", fmt.rate(fx.median)),
       statRow("High", fmt.rate(fx.high), fmt.date(fx.high_date)),
       statRow("Low", fmt.rate(fx.low), fmt.date(fx.low_date)),
@@ -122,10 +122,10 @@
     const d = lastData;
     if (!d || !d.chart) return;
     const showReal = $("show-real").checked && !!d.inflation;
-    const pw = fmt.periodWord(d.period);
+    const p = d.period;
     const legend = [el("span", null, el("i", { class: "key-line", style: "background:var(--series-1)" }), "Exchange rate")];
     if (showReal) legend.push(el("span", null, el("i", { class: "key-line", style: "background:var(--series-2)" }), "Past rates in today's prices"));
-    legend.push(el("span", null, el("i", { class: "key-line", style: "background:var(--reference)" }), pw + " average"));
+    legend.push(el("span", null, el("i", { class: "key-line", style: "background:var(--reference)" }), fmt.cap(p.average)));
     if (showReal) legend.push(el("span", null, el("i", { class: "key-line", style: "background:var(--series-2);height:1px" }), "Inflation-adjusted average"));
     legend.push(el("span", null, el("i", { class: "key-square" }), "Today"));
     $("chart-legend").replaceChildren(...legend);
@@ -137,8 +137,8 @@
       showReal,
       formatValue: fmt.rate,
       formatDate: fmt.date,
-      ariaLabel: "Line chart of " + d.fx.pair + ", " + d.period.label.toLowerCase() + ". " + (d.headline || ""),
-      labels: { rate: "Rate", real: "In today's prices", average: pw + " avg", realAverage: "Adjusted avg", today: "Today", vsAverage: "vs " + pw + " avg" },
+      ariaLabel: "Line chart of " + d.fx.pair + ", " + fmt.lowerFirst(p.heading) + ". " + (d.headline || ""),
+      labels: { rate: "Rate", real: "In today's prices", average: fmt.cap(p.average_short), realAverage: "Adjusted avg", today: "Today", vsAverage: "vs " + p.average_short },
     };
     if (chart) chart.update(opts);
     else chart = QChart.mount($("chart"), opts);
@@ -156,10 +156,10 @@
     const section = $("inflation-section");
     if (!d.inflation) { section.hidden = true; return; }
     section.hidden = false;
-    const inf = d.inflation, pw = fmt.periodWord(d.period);
+    const inf = d.inflation;
     $("infl-sub").textContent = "CPI to " + fmt.month(inf.cpi_cutoff.slice(0, 7));
     $("bridge").replaceChildren(
-      el("div", { class: "bridge-row" }, el("span", null, "Currency advantage vs " + pw + " average"), signed(inf.nominal_vs_average_pct)),
+      el("div", { class: "bridge-row" }, el("span", null, "Currency advantage vs " + d.period.average), signed(inf.nominal_vs_average_pct)),
       el("div", { class: "bridge-row" }, el("span", null, "Relative inflation adjustment"),
         el("span", { class: fmt.direction(inf.inflation_adjustment_pts) }, fmt.signedPts(inf.inflation_adjustment_pts))),
       el("div", { class: "bridge-row total" }, el("span", null, "Real advantage"), signed(inf.real_vs_average_pct)));
@@ -248,7 +248,7 @@
     const id = ++requestId;
     if ($("country-body").hidden) {
       const period = options && options.periods ? options.periods.find(p => p.key === sel.period) : null;
-      showState("Loading " + (period ? period.label.toLowerCase() + " of " : "") + sel.base + "/" + quoteCode + " history…",
+      showState("Loading " + fmt.loadingSpan(period) + " of " + sel.base + "/" + quoteCode + " history…",
         "The first load fetches daily history from central-bank sources and takes about 20 seconds.", true, null);
     } else {
       $("country-body").classList.add("is-refreshing");

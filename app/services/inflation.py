@@ -12,7 +12,7 @@ from app.providers.imf import ImfCpiProvider
 from app.services.cache import FileCache
 from app.settings import settings
 
-CPI_START_YEAR = 2014  # one spare year before the longest (10y) comparison window
+CPI_START_YEAR = 2000  # covers the MAX window; earlier data is never needed
 
 
 @dataclass

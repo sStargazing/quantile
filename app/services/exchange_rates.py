@@ -15,6 +15,7 @@ Design:
 
 import asyncio
 import calendar
+import logging
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -25,7 +26,10 @@ from app.services.cache import FileCache
 from app.services.narrative import day_range
 from app.settings import settings
 
+log = logging.getLogger(__name__)
+
 PIVOT = "USD"
+MAX_CONCURRENT_REQUESTS = 8  # be polite to the provider when fetching many years at once
 
 
 @dataclass(frozen=True)
@@ -82,6 +86,7 @@ class ExchangeRateService:
         self._provider = provider
         self._cache = cache
         self._currencies = sorted(set(currencies) | {PIVOT})
+        self._limit = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
     @property
     def provider(self) -> FrankfurterProvider:
@@ -91,7 +96,8 @@ class ExchangeRateService:
         key = f"fx:{self._provider.name}:{PIVOT}:{chunk.start}:{chunk.end}:{','.join(self._currencies)}"
 
         async def loader():
-            series = await self._provider.fetch_range(PIVOT, self._currencies, chunk.start, chunk.end)
+            async with self._limit:
+                series = await self._provider.fetch_range(PIVOT, self._currencies, chunk.start, chunk.end)
             return _encode(series)
 
         result = await self._cache.fetch(key, chunk.ttl, loader)
@@ -110,6 +116,7 @@ class ExchangeRateService:
             if isinstance(res, BaseException):
                 if not isinstance(res, (ProviderError, DataQualityError)):
                     raise res
+                log.warning("FX chunk %s–%s unavailable: %s", chunk.start, chunk.end, res)
                 warnings.append(f"Exchange rates for {day_range(chunk.start, chunk.end)} are unavailable from the provider.")
                 continue
             raw, stale = res

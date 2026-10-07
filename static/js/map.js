@@ -122,7 +122,7 @@
     for (const p of shapes.values()) inert(p);
     for (const { mark, hit } of markers.values()) { inert(hit); mark.style.fill = "var(--map-none)"; }
 
-    const pw = data ? fmt.periodWord(data.period) : "";
+    const avg = data ? data.period.average : "";
     const ordered = data ? data.entries : [];
     for (const d of destinations) {
       if (d.currency_code === sel.base && !byId.entries.has(d.iso_numeric)) {
@@ -137,7 +137,7 @@
       const ranked = e.status === "ranked";
       const label = ranked
         ? e.destination.display_name + ": Quantile Score " + fmt.score(e.quantile_score) + " of 100, rank " + e.rank + " of " + data.ranked_count +
-          ". " + fmt.buysVs(sel.base, e.destination.currency_code, e.vs_historical_average_pct, pw + " average") + "."
+          ". " + fmt.buysVs(sel.base, e.destination.currency_code, e.vs_historical_average_pct, avg) + "."
         : e.destination.display_name + ": not ranked. " + e.unavailable_reason;
       const color = ranked ? scoreColor(e.quantile_score) : "";
       const shape = shapes.get(id);
@@ -169,13 +169,13 @@
     const e = info.entry, ccy = info.dest.currency_code;
     const link = el("a", { class: "tip-link", href: info.href }, "View " + info.name + " →");
     if (info.kind === "unranked") return [head(info.name, ccy), el("p", null, "Not ranked: " + e.unavailable_reason), link];
-    const pw = fmt.periodWord(lastData.period);
+    const p = lastData.period;
     return [
       head(info.name, ccy, "Rank " + e.rank + " of " + lastData.ranked_count),
       el("div", { class: "tip-score" }, el("span", { class: "t-figure" }, fmt.score(e.quantile_score)), el("span", { class: "small muted" }, "/ 100")),
       el("div", { class: "tip-rows" },
         tipRow("FX percentile", fmt.ordinal(e.fx_percentile)),
-        tipRow("vs " + pw + " average", fmt.signedPct(e.vs_historical_average_pct), fmt.direction(e.vs_historical_average_pct)),
+        tipRow("vs " + p.average_short, fmt.signedPct(e.vs_historical_average_pct), fmt.direction(e.vs_historical_average_pct)),
         tipRow("Real purchasing power", fmt.signedPct(e.real_purchasing_power_pct), fmt.direction(e.real_purchasing_power_pct))),
       link,
     ];
@@ -287,7 +287,7 @@
   function renderTop(data) {
     const top = data.entries.filter(e => e.status === "ranked").slice(0, 5);
     $("top-section").hidden = !top.length;
-    $("top-sub").textContent = "Highest scores for " + data.base.code + ", " + data.period.label.toLowerCase();
+    $("top-sub").textContent = "Highest scores for " + data.base.code + ", " + fmt.lowerFirst(data.period.heading);
     $("top-list").replaceChildren(...top.map(e => el("li", null,
       el("a", { href: "/country/" + encodeURIComponent(e.destination.id) + "?" + Q.selectionQuery(sel) },
         el("span", { class: "top-rank" }, String(e.rank).padStart(2, "0")),

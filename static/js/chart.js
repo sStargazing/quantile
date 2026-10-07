@@ -70,11 +70,15 @@
     const values = pts.map(p => p.v).concat([opts.average]);
     if (showReal) values.push(...pts.map(p => p.r), opts.realAverage);
     let lo = Math.min(...values), hi = Math.max(...values);
+    const dataLo = lo, dataHi = hi;
     const padV = (hi - lo) * 0.08 || Math.abs(hi) * 0.01 || 1;
     lo -= padV; hi += padV;
     const ticks = niceTicks(lo, hi, narrow ? 4 : 5);
-    lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
     const step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
+    // extend to a round tick beyond the data on both sides, so the line never runs past the last gridline
+    if (ticks[ticks.length - 1] < dataHi) ticks.push(+(ticks[ticks.length - 1] + step).toPrecision(12));
+    if (ticks[0] > dataLo) ticks.unshift(+(ticks[0] - step).toPrecision(12));
+    lo = ticks[0]; hi = ticks[ticks.length - 1];
     let decimals = 0; // as many as the tick step needs: 10 → 0, 2.5 → 1, 0.05 → 2
     while (decimals < 6 && Math.abs(step * 10 ** decimals - Math.round(step * 10 ** decimals)) > 1e-6) decimals++;
     const tickFmt = new Intl.NumberFormat(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });

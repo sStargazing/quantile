@@ -48,7 +48,7 @@ class HomeCurrency:
 class Period:
     key: str
     label: str
-    years: int
+    years: int | None  # None = MAX: the longest window every destination can be compared over
 
 
 DESTINATIONS: tuple[Destination, ...] = (
@@ -102,6 +102,7 @@ PERIODS: tuple[Period, ...] = (
     Period("3y", "Past 3 years", 3),
     Period("5y", "Past 5 years", 5),
     Period("10y", "Past 10 years", 10),
+    Period("max", "Longest history available for every destination", None),
 )
 
 DEFAULT_BASE = "AUD"

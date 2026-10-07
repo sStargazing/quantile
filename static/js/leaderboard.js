@@ -60,7 +60,7 @@
     return n ? rate + " · shared with " + n + " other destination" + (n > 1 ? "s" : "") : rate;
   }
 
-  function tableRow(entry, notes, pw) {
+  function tableRow(entry, notes, avg) {
     const d = entry.destination;
     const ranked = entry.status === "ranked";
     const dest = el("td", { class: "left" },
@@ -78,8 +78,8 @@
         : "Not ranked"),
       el("td", null, sparkline(entry.sparkline, entry.historical_average)),
       el("td", null, fmt.ordinal(entry.fx_percentile)),
-      el("td", { title: fmt.buysVs(sel.base, d.currency_code, entry.vs_historical_average_pct, pw + " average") }, delta(entry.vs_historical_average_pct)),
-      el("td", { title: ranked ? fmt.buysVs(sel.base, d.currency_code, entry.real_purchasing_power_pct, pw + " average") + ", after inflation" : null },
+      el("td", { title: fmt.buysVs(sel.base, d.currency_code, entry.vs_historical_average_pct, avg) }, delta(entry.vs_historical_average_pct)),
+      el("td", { title: ranked ? fmt.buysVs(sel.base, d.currency_code, entry.real_purchasing_power_pct, avg) + ", after inflation" : null },
         ranked ? delta(entry.real_purchasing_power_pct) : "—"));
   }
 
@@ -104,10 +104,9 @@
 
   function render(data) {
     const notes = new Map();
-    const pw = fmt.periodWord(data.period);
-    $("board-rows").replaceChildren(...data.entries.map(e => tableRow(e, notes, pw)));
+    $("board-rows").replaceChildren(...data.entries.map(e => tableRow(e, notes, data.period.average)));
     $("board-cards").replaceChildren(...data.entries.map(card));
-    $("spark-head").textContent = data.period.label;
+    $("spark-head").textContent = data.period.heading;
 
     $("board-notes").replaceChildren(notes.size
       ? el("ol", { style: "margin:0;padding-left:18px" }, [...notes.keys()].map(t => el("li", null, t)))
@@ -131,7 +130,7 @@
 
   function showLoading() {
     const period = options.periods.find(p => p.key === sel.period);
-    $("board-state-title").textContent = "Loading " + period.label.toLowerCase() + " of " + sel.base + " exchange rates…";
+    $("board-state-title").textContent = "Loading " + fmt.loadingSpan(period) + " of " + sel.base + " exchange rates…";
     $("board-state-detail").textContent = "The first load fetches daily history from central-bank sources and takes about 20 seconds.";
     $("board-state").querySelector(".progress").hidden = false;
     for (const b of $("board-state").querySelectorAll(".actions")) b.remove();

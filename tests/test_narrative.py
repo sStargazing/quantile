@@ -1,8 +1,12 @@
+from datetime import date
+
 from app.config.destinations import get_destination, get_home_currency, get_period
-from app.services.narrative import explanation, headline
+from app.services.narrative import explanation, headline, period_text
 
 AUD, JAPAN, UAE = get_home_currency("AUD"), get_destination("japan"), get_destination("uae")
-FIVE_YEARS, ONE_YEAR = get_period("5y"), get_period("1y")
+FIVE_YEARS = period_text(get_period("5y"), date(2021, 10, 7))
+ONE_YEAR = period_text(get_period("1y"), date(2025, 10, 7))
+MAX = period_text(get_period("max"), date(2010, 1, 1))
 
 
 def test_headline_adapts_to_inputs_and_rounds_down():
@@ -31,3 +35,10 @@ def test_country_names_read_naturally_mid_sentence():
     assert "than in the United Kingdom" in explanation(gbp, JAPAN, FIVE_YEARS, 90.0, 0.0, 30.0, 10.0)
     eur = get_home_currency("EUR")
     assert "than in the eurozone" in explanation(eur, JAPAN, FIVE_YEARS, 90.0, 0.0, 30.0, 10.0)
+
+
+def test_max_period_is_described_by_its_start_date():
+    assert MAX.within == "since Jan 2010" and MAX.average == "average since Jan 2010"
+    assert headline(AUD, JAPAN, MAX, 74.2, 0.0) == "1 AUD buys more JPY today than on 74% of days since Jan 2010."
+    assert "further than its average since Jan 2010" in explanation(AUD, JAPAN, MAX, 74.0, 0.0, 9.0, 1.0)
+    assert FIVE_YEARS.average == "5-year average" and ONE_YEAR.within == "in the past year"

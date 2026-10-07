@@ -22,6 +22,7 @@ from app.config.destinations import (
     Destination,
     HomeCurrency,
     Period,
+    all_cpi_series,
     enabled_destinations,
 )
 from app.models import schemas
@@ -32,6 +33,7 @@ from app.services.inflation import CpiDataset, InflationService
 from app.settings import settings
 
 MAX_CHART_POINTS = 600
+MAX_PERIOD_FLOOR_YEARS = 10  # MAX is never shorter than the longest fixed period
 SPARKLINE_POINTS = 60
 STALE_FX_DAYS = 5  # latest observation older than this (vs. the newest in the table) is flagged
 COVERAGE_TOLERANCE_DAYS = 7  # history may start this many days after the window start and still count as complete
@@ -78,6 +80,10 @@ class Computation:
     def ranked_count(self) -> int:
         return sum(1 for r in self.results if r.ranked)
 
+    @property
+    def text(self) -> narrative.PeriodText:
+        return narrative.period_text(self.period, self.window_start)
+
 
 def downsample_indices(n: int, max_points: int, keep: tuple[int, ...] = ()) -> list[int]:
     """Evenly spaced indices (plus first, last and any `keep`) for chart rendering only."""
@@ -97,13 +103,40 @@ class AnalysisService:
 
     # ---- data loading -------------------------------------------------
 
+    @staticmethod
+    def max_window_start(cpi: CpiDataset, end: date) -> date:
+        """Start of the MAX window: the longest span every destination can be compared over.
+
+        Inflation data is the binding constraint (exchange rates reach back
+        further for every configured currency), so MAX starts at the latest
+        first-available CPI period across all configured areas, which keeps one
+        common window for every home currency. Areas whose CPI starts less than
+        10 years before `end` are left out of that calculation, so MAX never
+        shrinks below 10Y; those destinations show as "not ranked" for MAX.
+        """
+        floor = years_before(end, MAX_PERIOD_FLOOR_YEARS)
+        firsts = []
+        for code, index_type in all_cpi_series():
+            starts = [s.first.start for f in ("M", "Q") if (s := cpi.series.get((code, index_type, f))) and s.periods]
+            if starts:
+                firsts.append(min(starts))
+        return max((d for d in firsts if d <= floor), default=floor)
+
+    def window_start(self, period: Period, cpi: CpiDataset, end: date) -> date:
+        return self.max_window_start(cpi, end) if period.years is None else years_before(end, period.years)
+
     async def _load(self, period: Period) -> tuple[FxTable, CpiDataset]:
         today = date.today()
+        if period.years is None:
+            cpi = await self._inflation.get_dataset()
+            fetch_from = min(self.max_window_start(cpi, today), years_before(today, 1)) - timedelta(days=21)
+            return await self._fx.get_table(fetch_from, today), cpi
         fetch_from = years_before(today, max(period.years, 1)) - timedelta(days=21)
         return await asyncio.gather(self._fx.get_table(fetch_from, today), self._inflation.get_dataset())
 
-    async def prewarm(self, longest: Period) -> None:
-        await self._load(longest)
+    async def prewarm(self, *periods: Period) -> None:
+        for period in periods:
+            await self._load(period)
 
     # ---- core computation -------------------------------------------
 
@@ -124,7 +157,7 @@ class AnalysisService:
 
     def _compute(self, home: HomeCurrency, period: Period, table: FxTable, cpi: CpiDataset) -> Computation:
         window_end = max(s.latest_date for s in table.pivot_series.values())
-        window_start = years_before(window_end, period.years)
+        window_start = self.window_start(period, cpi, window_end)
 
         results = []
         for dest in enabled_destinations():
@@ -253,7 +286,7 @@ class AnalysisService:
             entry.real_purchasing_power_pct = r.real.real_vs_mean_pct
             entry.score_components = [schemas.ScoreComponentOut(**c.__dict__) for c in r.score.components]
             entry.explanation = narrative.explanation(
-                comp.home, r.destination, comp.period, r.below_pct, r.equal_pct,
+                comp.home, r.destination, comp.text, r.below_pct, r.equal_pct,
                 r.real.real_vs_mean_pct, r.real.inflation_adjustment_pts,
             )
         return entry
@@ -262,7 +295,7 @@ class AnalysisService:
         comp = await self.compute(home, period)
         return schemas.LeaderboardResponse(
             base=_home_out(home),
-            period=_period_out(period),
+            period=_period_out(period, comp.window_start),
             window_start=comp.window_start,
             window_end=comp.window_end,
             generated_at=comp.generated_at,
@@ -283,7 +316,7 @@ class AnalysisService:
             unavailable_reason=r.reason,
             destination=_destination_out(dest),
             base=_home_out(home),
-            period=_period_out(period),
+            period=_period_out(period, comp.window_start),
             shares_currency_with=self._shares_currency(r, comp),
             rank=r.rank,
             ranked_count=comp.ranked_count,
@@ -302,7 +335,7 @@ class AnalysisService:
             return response
 
         fx = r.fx
-        response.headline = narrative.headline(home, dest, period, r.below_pct, r.equal_pct)
+        response.headline = narrative.headline(home, dest, comp.text, r.below_pct, r.equal_pct)
         response.fx = schemas.FxStats(
             pair=f"{home.code}/{dest.currency_code}",
             current_rate=fx.current,
@@ -327,7 +360,7 @@ class AnalysisService:
         if r.real and r.score:
             real = r.real
             response.explanation = narrative.explanation(
-                home, dest, period, r.below_pct, r.equal_pct, real.real_vs_mean_pct, real.inflation_adjustment_pts
+                home, dest, comp.text, r.below_pct, r.equal_pct, real.real_vs_mean_pct, real.inflation_adjustment_pts
             )
             response.inflation = schemas.InflationAnalysis(
                 home=_country_inflation(home.country, r.home_cpi, real.home_inflation),
@@ -390,14 +423,15 @@ class AnalysisService:
         return notes
 
     async def history(self, base: str, quote: str, period: Period, max_points: int | None) -> schemas.HistoryResponse:
-        table, _ = await self._load(period)
+        table, cpi = await self._load(period)
         series = table.pair(base, quote)
-        series = series.window(years_before(series.latest_date, period.years))
+        start = self.window_start(period, cpi, series.latest_date)
+        series = series.window(start)
         idx = downsample_indices(len(series), max_points) if max_points else list(range(len(series)))
         return schemas.HistoryResponse(
             base=base,
             quote=quote,
-            period=_period_out(period),
+            period=_period_out(period, start),
             observations=len(series),
             downsampled=len(idx) < len(series),
             points=[schemas.ChartPoint(date=series.dates[i], rate=series.rates[i]) for i in idx],
@@ -443,5 +477,9 @@ def _home_out(h: HomeCurrency) -> schemas.HomeCurrencyOut:
     return schemas.HomeCurrencyOut(**{k: getattr(h, k) for k in schemas.HomeCurrencyOut.model_fields})
 
 
-def _period_out(p: Period) -> schemas.PeriodOut:
-    return schemas.PeriodOut(key=p.key, label=p.label, years=p.years)
+def _period_out(p: Period, start: date | None = None) -> schemas.PeriodOut:
+    out = schemas.PeriodOut(key=p.key, label=p.label, years=p.years)
+    if start is not None:
+        t = narrative.period_text(p, start)
+        out.start, out.within, out.heading, out.average, out.average_short = start, t.within, t.heading, t.average, t.average_short
+    return out
