@@ -84,3 +84,58 @@ def test_change_over_days_uses_last_observation_on_or_before_target():
 def test_volatility_is_zero_for_flat_series_and_positive_otherwise():
     assert annualised_volatility(fx([100.0] * 30)) == pytest.approx(0.0)
     assert annualised_volatility(fx([100.0, 101.0] * 15)) > 0
+
+
+def _dated(points):
+    return FxSeries("AUD", "JPY", tuple(d for d, _ in points), tuple(float(r) for _, r in points))
+
+
+def test_record_context_finds_the_last_time_it_was_this_good():
+    from app.analytics.fx_metrics import record_context
+
+    s = _dated([(date(2023, 1, 2), 100), (date(2024, 7, 12), 120), (date(2025, 3, 3), 105), (date(2026, 10, 7), 115)])
+    ctx = record_context(s)
+    assert ctx.direction == "high" and ctx.since == date(2024, 7, 12) and ctx.span_start == date(2023, 1, 2)
+
+
+def test_record_context_reports_all_time_highs_and_lows():
+    from app.analytics.fx_metrics import record_context
+
+    high = record_context(_dated([(date(2020, 1, 1), 100), (date(2022, 1, 3), 110), (date(2026, 10, 7), 130)]))
+    assert high.direction == "high" and high.since is None
+    low = record_context(_dated([(date(2020, 1, 1), 100), (date(2022, 1, 3), 90), (date(2026, 10, 7), 80)]))
+    assert low.direction == "low" and low.since is None
+
+
+def test_record_context_picks_weakest_since_when_today_is_a_low():
+    from app.analytics.fx_metrics import record_context
+
+    s = _dated([(date(2020, 3, 16), 60), (date(2023, 1, 2), 90), (date(2026, 9, 1), 80), (date(2026, 10, 7), 70)])
+    ctx = record_context(s)
+    assert ctx.direction == "low" and ctx.since == date(2020, 3, 16)
+
+
+def test_record_context_is_silent_for_unremarkable_or_pegged_rates():
+    from app.analytics.fx_metrics import record_context
+
+    # was both higher and lower within the last two months
+    assert record_context(_dated([(date(2026, 8, 20), 99), (date(2026, 9, 30), 101), (date(2026, 10, 7), 100)])) is None
+    assert record_context(fx([3.6725] * 60)) is None
+
+
+def test_recent_extreme_reports_a_recent_peak_when_today_is_not_one():
+    from app.analytics.fx_metrics import recent_extreme
+
+    s = _dated([(date(2024, 7, 12), 116), (date(2025, 6, 2), 100), (date(2026, 8, 28), 114.7),
+                (date(2026, 9, 15), 112), (date(2026, 10, 7), 110.2)])
+    ext = recent_extreme(s)
+    assert ext.on == date(2026, 8, 28) and ext.context.direction == "high" and ext.context.since == date(2024, 7, 12)
+    assert ext.today_vs_extreme_pct == pytest.approx((110.2 / 114.7 - 1) * 100)
+
+
+def test_recent_extreme_ignores_unremarkable_swings():
+    from app.analytics.fx_metrics import recent_extreme
+
+    s = _dated([(date(2026, 4, 1), 115), (date(2026, 5, 1), 85), (date(2026, 7, 20), 110),
+                (date(2026, 8, 20), 90), (date(2026, 10, 7), 100)])
+    assert recent_extreme(s) is None  # both recent extremes were beaten within the previous half-year

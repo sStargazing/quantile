@@ -42,3 +42,18 @@ def test_max_period_is_described_by_its_start_date():
     assert headline(AUD, JAPAN, MAX, 74.2, 0.0) == "1 AUD buys more JPY today than on 74% of days since Jan 2010."
     assert "further than its average since Jan 2010" in explanation(AUD, JAPAN, MAX, 74.0, 0.0, 9.0, 1.0)
     assert FIVE_YEARS.average == "5-year average" and ONE_YEAR.within == "in the past year"
+
+
+def test_record_sentences():
+    from app.analytics.fx_metrics import RecentExtreme, RecordContext
+    from app.services.narrative import real_record, record, recent_extreme
+
+    since = RecordContext("high", date(2024, 7, 12), date(2010, 1, 1))
+    assert record(AUD, JAPAN, since) == "AUD is at its strongest against JPY since July 2024."
+    ever = RecordContext("low", None, date(2010, 1, 1))
+    assert record(AUD, JAPAN, ever) == "AUD is at its weakest against JPY in Quantile's records (since Jan 2010)."
+    assert real_record(AUD, JAPAN, since) == "After inflation, AUD buys the most in Japan since July 2024."
+    peak = RecentExtreme(date(2026, 8, 28), 114.7, since, -3.94)
+    assert recent_extreme(AUD, JAPAN, peak) == (
+        "On 28 Aug 2026, AUD reached its strongest against JPY since July 2024. Today's rate is 3.9% below that peak."
+    )

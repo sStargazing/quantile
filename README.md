@@ -228,6 +228,27 @@ The headline sentence uses the strictly-below share, rounded down, so it never
 overstates ("1 AUD buys more JPY today than on 87% of days…"). When most days
 share today's exact rate, it says so instead.
 
+### "Last time it was this good" (country pages)
+
+Each country page can show one sentence putting today's rate in longer context
+(`record_context` and `recent_extreme` in `analytics/fx_metrics.py`). It is always
+searched over the MAX span, so it doesn't change when you switch period:
+
+* **Today is a high or low.** *"AUD is at its strongest against JPY since July
+  2024."* `since` is the most recent earlier day that was at least as good (or
+  as bad). This is shown only if that day is at least 60 days ago; if no earlier
+  day qualifies, the sentence says "in Quantile's records (since Jan 2010)".
+* **Otherwise, a recent peak or trough.** If the highest or lowest day of the
+  last 3 months was the best or worst in at least half a year: *"On 1 Sep 2026,
+  AUD reached its strongest against THB since July 2024. Today's rate is 1.4%
+  below that peak."*
+* **Inflation.** The same search runs on the inflation-adjusted series. When it
+  tells a different story it is shown too (e.g. the lira is nominally at a
+  record against USD, but after inflation it's only the most since Dec 2025).
+* **Nothing notable** (a mid-range or pegged rate): no sentence is shown.
+
+The date is also marked on the chart when it falls inside the selected period.
+
 ### 3. Inflation adjustment (`analytics/inflation.py`, `analytics/purchasing_power.py`)
 
 A currency can look "cheap" simply because local prices rose. Türkiye is the

@@ -191,7 +191,24 @@ class CountryResponse(BaseModel):
     data_quality: DataQuality | None
     sources: list[SourceOut]
     assumptions: list[str]
+    record: "RecordOut | None" = None
     generated_at: datetime
+
+
+class RecordOut(BaseModel):
+    """"Last time it was this good": searched over the MAX span whatever period is selected."""
+
+    kind: Literal["today", "recent"]  # today is the high/low, or a peak/trough in the last 3 months was
+    basis: Literal["nominal", "real"] = "nominal"  # "real" when only the inflation-adjusted series is notable
+    statement: str  # "AUD is at its strongest against JPY since July 2024."
+    direction: Literal["high", "low"]
+    on: date | None = None  # "recent": the day of the peak/trough
+    today_vs_extreme_pct: float | None = None
+    since: date | None  # the last earlier day at least as good (high) / as bad (low); None = whole span
+    span_start: date
+    real_statement: str | None = None  # the inflation-adjusted equivalent, when it tells a different story
+    real_direction: Literal["high", "low"] | None = None
+    real_since: date | None = None
 
 
 class HistoryResponse(BaseModel):
@@ -210,3 +227,6 @@ class ConvertResponse(BaseModel):
     rate: float
     result: float
     date: date
+
+
+CountryResponse.model_rebuild()

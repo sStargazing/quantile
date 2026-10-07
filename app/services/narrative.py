@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 from datetime import date
 
+from app.analytics.fx_metrics import RecentExtreme, RecordContext
 from app.config.destinations import Destination, HomeCurrency, Period
 
 
@@ -98,3 +99,34 @@ def explanation(
             f"Slower price rises in {place(dest.country)} than in {place(home.country)} add {inflation_adjustment_pts:.1f} points to the currency advantage."
         )
     return " ".join(parts)
+
+
+def _records(span_start: date) -> str:
+    return f"in Quantile's records (since {span_start:%b %Y})"
+
+
+def record(home: HomeCurrency, dest: Destination, ctx: RecordContext) -> str:
+    """e.g. "AUD is at its strongest against JPY since July 2024." """
+    word = "strongest" if ctx.direction == "high" else "weakest"
+    when = _records(ctx.span_start) if ctx.since is None else f"since {ctx.since:%B %Y}"
+    return f"{home.code} is at its {word} against {dest.currency_code} {when}."
+
+
+def real_record(home: HomeCurrency, dest: Destination, ctx: RecordContext) -> str:
+    """e.g. "After inflation, AUD buys the most in Japan since May 2019." """
+    amount = "the most" if ctx.direction == "high" else "the least"
+    when = _records(ctx.span_start) if ctx.since is None else f"since {ctx.since:%B %Y}"
+    return f"After inflation, {home.code} buys {amount} in {place(dest.country)} {when}."
+
+
+def recent_extreme(home: HomeCurrency, dest: Destination, ext: RecentExtreme) -> str:
+    """e.g. "On 28 Aug 2026, AUD reached its strongest against JPY since July 2024. Today's rate is 3.9% below that peak." """
+    ctx = ext.context
+    verb, word, noun = ("reached", "strongest", "peak") if ctx.direction == "high" else ("fell to", "weakest", "low")
+    when = _records(ctx.span_start) if ctx.since is None else f"since {ctx.since:%B %Y}"
+    gap = abs(ext.today_vs_extreme_pct)
+    where = "below" if ext.today_vs_extreme_pct < 0 else "above"
+    return (
+        f"On {day(ext.on)}, {home.code} {verb} its {word} against {dest.currency_code} {when}. "
+        f"Today's rate is {gap:.1f}% {where} that {noun}."
+    )

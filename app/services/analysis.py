@@ -13,6 +13,8 @@ from app.analytics.fx_metrics import (
     FxSummary,
     annualised_volatility,
     change_over_days,
+    recent_extreme,
+    record_context,
     share_below_and_equal,
     summarise,
 )
@@ -24,6 +26,7 @@ from app.config.destinations import (
     Period,
     all_cpi_series,
     enabled_destinations,
+    get_period,
 )
 from app.models import schemas
 from app.models.series import DataQualityError, FxSeries, PriceIndexSeries
@@ -336,6 +339,7 @@ class AnalysisService:
 
         fx = r.fx
         response.headline = narrative.headline(home, dest, comp.text, r.below_pct, r.equal_pct)
+        response.record = await self._record(dest, home, period, comp)
         response.fx = schemas.FxStats(
             pair=f"{home.code}/{dest.currency_code}",
             current_rate=fx.current,
@@ -379,6 +383,50 @@ class AnalysisService:
                 method=SCORE_METHOD,
             )
         return response
+
+    async def _record(self, dest: Destination, home: HomeCurrency, period: Period, comp: Computation) -> schemas.RecordOut | None:
+        """"Last time it was this good", searched over the MAX span so it doesn't change with the selected period."""
+        longest = get_period("max")
+        full = comp if period.key == longest.key else await self.compute(home, longest)
+        r = next((x for x in full.results if x.destination.id == dest.id), None)
+        if r is None or r.series is None:
+            return None
+        ctx = record_context(r.series)
+        real_ctx = record_context(r.real.adjusted) if r.real else None
+
+        if ctx is not None:  # today itself is a high or low
+            out = schemas.RecordOut(
+                kind="today", statement=narrative.record(home, dest, ctx),
+                direction=ctx.direction, since=ctx.since, span_start=ctx.span_start,
+            )
+            if r.real and real_ctx is None:
+                out.real_statement = (
+                    f"After inflation it isn't a standout: {home.code} bought as much in "
+                    f"{narrative.place(dest.country)} within the last two months."
+                )
+            elif real_ctx is not None and (real_ctx.direction, _month(real_ctx.since)) != (ctx.direction, _month(ctx.since)):
+                out.real_statement = narrative.real_record(home, dest, real_ctx)
+                out.real_direction, out.real_since = real_ctx.direction, real_ctx.since
+            return out
+
+        ext = recent_extreme(r.series)
+        if ext is not None:  # a notable peak or trough in the last three months
+            out = schemas.RecordOut(
+                kind="recent", statement=narrative.recent_extreme(home, dest, ext),
+                direction=ext.context.direction, since=ext.context.since, span_start=ext.context.span_start,
+                on=ext.on, today_vs_extreme_pct=ext.today_vs_extreme_pct,
+            )
+            if real_ctx is not None:
+                out.real_statement = narrative.real_record(home, dest, real_ctx)
+                out.real_direction, out.real_since = real_ctx.direction, real_ctx.since
+            return out
+
+        if real_ctx is not None:  # nominally unremarkable, but notable after inflation
+            return schemas.RecordOut(
+                kind="today", basis="real", statement=narrative.real_record(home, dest, real_ctx),
+                direction=real_ctx.direction, since=real_ctx.since, span_start=real_ctx.span_start,
+            )
+        return None
 
     def _chart(self, r: DestinationResult) -> schemas.ChartData:
         s, fx = r.series, r.fx
@@ -449,6 +497,10 @@ class AnalysisService:
             schemas.SourceOut(name=fx.name, description=fx.description, url=fx.url, used_for="Daily exchange rates"),
             schemas.SourceOut(name=cpi.name, description=cpi.description, url=cpi.url, used_for="Consumer price indices (inflation)"),
         ]
+
+
+def _month(d: date | None) -> tuple[int, int] | None:
+    return (d.year, d.month) if d else None
 
 
 def _freq_name(series: PriceIndexSeries | None) -> str | None:

@@ -50,6 +50,11 @@
 
     $("headline").textContent = d.headline || "";
     $("explanation").textContent = d.explanation || "";
+    const rec = d.record;
+    $("record").hidden = !rec;
+    $("record").textContent = rec ? rec.statement : "";
+    $("record-real").hidden = !(rec && rec.real_statement);
+    $("record-real").textContent = rec && rec.real_statement ? rec.real_statement : "";
 
     const alerts = [];
     if (d.status !== "ranked") alerts.push(el("div", { class: "alert note" }, el("strong", null, "Not ranked. "), d.unavailable_reason));
@@ -139,9 +144,18 @@
       formatDate: fmt.date,
       ariaLabel: "Line chart of " + d.fx.pair + ", " + fmt.lowerFirst(p.heading) + ". " + (d.headline || ""),
       labels: { rate: "Rate", real: "In today's prices", average: fmt.cap(p.average_short), realAverage: "Adjusted avg", today: "Today", vsAverage: "vs " + p.average_short },
+      event: recordMarker(d.record),
     };
     if (chart) chart.update(opts);
     else chart = QChart.mount($("chart"), opts);
+  }
+
+  /* The "last time it was this good" date, drawn on the chart when it falls inside the period. */
+  function recordMarker(rec) {
+    if (!rec || rec.basis !== "nominal") return null;
+    if (rec.kind === "recent") return { date: rec.on, label: (rec.direction === "high" ? "Peak, " : "Low, ") + fmt.date(rec.on) };
+    if (rec.since) return { date: rec.since, label: "Last this " + (rec.direction === "high" ? "strong" : "weak") + ", " + fmt.date(rec.since) };
+    return null;
   }
 
   function renderChartTable(d) {

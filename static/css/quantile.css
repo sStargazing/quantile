@@ -279,6 +279,9 @@ select {
 .statement { margin-top: 32px; max-width: 46rem; }
 .statement p { margin: 8px 0 0; color: var(--ink-2); }
 .statement .t-title { margin: 0; color: var(--ink); }
+.statement .record { margin-top: 10px; color: var(--ink); font-size: 16px; font-weight: 500; }
+.statement .record-real { margin-top: 2px; font-size: 14px; }
+.statement .record + .record-real + p, .statement .record + p { margin-top: 12px; }
 
 .figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 28px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--hairline); }
 .figure { padding: 12px 16px 14px; border-left: 1px solid var(--hairline); }
@@ -324,6 +327,7 @@ select {
 .chart .grid line { stroke: var(--hairline); stroke-width: 1; shape-rendering: crispEdges; }
 .chart .baseline { stroke: var(--ink-muted); stroke-width: 1; shape-rendering: crispEdges; }
 .chart .small-label { fill: var(--ink-muted); }
+.chart .event-label { fill: var(--ink-2); font-weight: 500; paint-order: stroke; stroke: var(--page); stroke-width: 4px; stroke-linejoin: round; }
 .chart .ref-label { fill: var(--ink-2); font-weight: 600; font-size: 12px; }
 .chart .now-label { fill: var(--ink); font-weight: 600; font-size: 12px; }
 .chart-tip {

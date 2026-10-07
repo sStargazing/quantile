@@ -142,19 +142,24 @@
   function loadingSpan(p) { return p && p.years ? p.label.toLowerCase() : "full history"; }
   function direction(v) { return v == null || Math.abs(v) < 0.05 ? "" : (v > 0 ? "up" : "down"); }
 
-  const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  const monthFmt = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
-  function date(iso) { return iso ? dateFmt.format(new Date(iso + "T00:00:00Z")) : "—"; }
+  /* Dates are always day-month-year with fixed English month names ("7 Oct 2026"),
+     matching the sentences the server writes, whatever the browser's locale. */
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  function date(iso) {
+    if (!iso) return "—";
+    const [y, m, d] = iso.split("-").map(Number);
+    return d + " " + MONTHS[m - 1] + " " + y;
+  }
   function month(isoOrYm) {
     if (!isoOrYm) return "—";
-    const iso = /^\d{4}-\d{2}$/.test(isoOrYm) ? isoOrYm + "-01" : isoOrYm;
-    return monthFmt.format(new Date(iso + "T00:00:00Z"));
+    const [y, m] = isoOrYm.split("-").map(Number);
+    return MONTHS_LONG[m - 1] + " " + y;
   }
   /* "2026-M06" / "2026-Q2" → "Jun 2026" / "Q2 2026" */
   function cpiPeriod(label) {
     const m = /^(\d{4})-M(\d{2})$/.exec(label || "");
-    if (m) return new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric", timeZone: "UTC" })
-      .format(new Date(Date.UTC(+m[1], +m[2] - 1, 1)));
+    if (m) return MONTHS[+m[2] - 1] + " " + m[1];
     const q = /^(\d{4})-Q([1-4])$/.exec(label || "");
     return q ? "Q" + q[2] + " " + q[1] : (label || "—");
   }
@@ -187,6 +192,7 @@
 
   window.Q = {
     fetchJSON, readSelection, writeSelection, selectionQuery, syncNav, buildControls, setControls,
+    MONTHS,
     fmt: { rate, signedPct, signedPts, pct, score, ordinal, direction, date, month, cpiPeriod, buysVs, cap, lowerFirst, loadingSpan },
     el, notice,
   };

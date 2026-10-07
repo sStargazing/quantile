@@ -41,7 +41,8 @@
       }
     } else {
       const months = Math.max(1, Math.ceil((days / 30.4) / maxTicks));
-      const fmt = new Intl.DateTimeFormat(undefined, { month: "short", year: "2-digit", timeZone: "UTC" });
+      const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const fmt = { format: d => MONTHS[d.getUTCMonth()] + " " + String(d.getUTCFullYear()).slice(2) };
       let y = d0.getUTCFullYear(), m = d0.getUTCMonth() + 1;
       for (let i = 0; i < 60; i++, m++) {
         if (m > 11) { m = 0; y++; }
@@ -63,7 +64,7 @@
     const width = container.clientWidth;
     const height = container.clientHeight;
     const narrow = width < 520;
-    const pad = { top: 16, right: narrow ? 12 : 104, bottom: 28, left: 56 };
+    const pad = { top: opts.event ? 26 : 16, right: narrow ? 12 : 104, bottom: 28, left: 56 };
     const iw = width - pad.left - pad.right;
     const ih = height - pad.top - pad.bottom;
 
@@ -109,12 +110,26 @@
     const path = key => pts.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p[key]).toFixed(1)).join("");
     const refLine = (v, color, w) => s("line", { x1: pad.left, x2: pad.left + iw, y1: y(v), y2: y(v), stroke: color, "stroke-width": w });
 
+    // event marker ("last this strong", recent peak): a hairline at that date, labelled at the top
+    let eventLabel = null; // drawn after the data so its halo keeps it legible over the line
+    if (opts.event) {
+      const te = Date.parse(opts.event.date + "T00:00:00Z");
+      if (te >= t0 && te <= t1) {
+        const xe = Math.round(x(te)) + 0.5;
+        svg.appendChild(s("line", { x1: xe, x2: xe, y1: pad.top - 14, y2: pad.top + ih, stroke: "var(--ink-muted)", "stroke-width": 1 }));
+        const flip = xe > pad.left + iw * 0.7;
+        eventLabel = text(flip ? xe - 5 : xe + 5, pad.top - 5, opts.event.label, { "text-anchor": flip ? "end" : "start", class: "event-label" });
+      }
+    }
+
     // reference lines under the data
     svg.appendChild(refLine(opts.average, "var(--reference)", 1.5));
     if (showReal) svg.appendChild(refLine(opts.realAverage, "var(--series-2)", 1.5));
 
     if (showReal) svg.appendChild(s("path", { d: path("r"), fill: "none", stroke: "var(--series-2)", "stroke-width": 2, "stroke-linejoin": "miter", "stroke-linecap": "butt" }));
     svg.appendChild(s("path", { d: path("v"), fill: "none", stroke: "var(--series-1)", "stroke-width": 2, "stroke-linejoin": "miter", "stroke-linecap": "butt" }));
+
+    if (eventLabel) svg.appendChild(eventLabel);
 
     // today marker: 8px+ dot with a 2px surface ring
     const last = pts[pts.length - 1];
