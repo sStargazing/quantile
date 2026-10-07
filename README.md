@@ -2,6 +2,8 @@
 
 **Where does my money currently go further than it normally does?**
 
+**Live:** https://quantile-w5si.onrender.com · [World Map](https://quantile-w5si.onrender.com/map)
+
 Quantile ranks popular travel destinations by how favourable today's exchange
 rate is for your home currency *compared with that currency pair's own
 history*, after adjusting for inflation at home and in the destination. It is
@@ -28,6 +30,23 @@ Open http://127.0.0.1:8000. Interactive API docs are at `/docs`.
 The first request downloads up to 10 years of daily exchange rates (about 20
 seconds); the server starts this in the background at startup. After that, data
 is served from the on-disk cache in `.cache/quantile/` and pages load instantly.
+
+### Deployment
+
+The live site at https://quantile-w5si.onrender.com runs on [Render](https://render.com) as a
+Python web service connected to this GitHub repository:
+
+| Setting | Value |
+|---|---|
+| Build command | `pip install -r requirements.txt` |
+| Start command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+
+Pushing to `main` triggers a new deploy (Render's Auto-Deploy). No environment
+variables or keys are required. The data cache lives on the instance's disk, so
+after a deploy or restart the first request re-downloads exchange-rate history
+(about 20 seconds); the server starts that download in the background at
+startup. To keep the cache across deploys, attach a Render persistent disk and
+set `CACHE_DIR` to a path on it.
 
 ### Tests
 
@@ -97,8 +116,9 @@ app/
   services/               cache.py, exchange_rates.py, inflation.py, analysis.py, narrative.py
   analytics/              fx_metrics.py, inflation.py, purchasing_power.py, scoring.py
   api/                    currencies.py, leaderboard.py, countries.py
-templates/                base.html (shared header), leaderboard.html, country.html, converter.html
-static/                   css/quantile.css, js/common.js, leaderboard.js, country.js, chart.js
+templates/                base.html (shared header), leaderboard.html, map.html, country.html, converter.html
+static/                   css/quantile.css, js/common.js, leaderboard.js, map.js, country.js, chart.js
+static/vendor/            d3-array, d3-geo, topojson-client, world-atlas countries-110m.json
 tests/
 ```
 
@@ -114,7 +134,31 @@ tests/
 | `GET /api/history/{AUD-JPY}?period=5y&max_points=500` | Raw daily history for any configured pair |
 | `GET /api/convert?base=AUD&to=JPY&amount=100` | Conversion at the latest rate (the original calculator) |
 
-Pages: `/` (leaderboard), `/country/{slug}?base=…&period=…`, `/converter`.
+Pages: `/` (Leaderboard), `/map` (World Map), `/country/{slug}?base=…&period=…`, and `/converter` (the
+original calculator, not linked from the header).
+
+### World Map
+
+`/map` shades each destination by the same Quantile Score as the Leaderboard. It
+reads `GET /api/leaderboard`, so the two pages always show identical scores for
+the same home currency and period, and the server reuses its cached computation.
+There is no separate map endpoint or scoring code.
+
+* **Geometry:** [world-atlas](https://github.com/topojson/world-atlas) 110m
+  countries (Natural Earth, public domain), drawn with `d3-geo` (Equal Earth
+  projection) and `topojson-client`. All three are vendored in
+  `static/vendor/`; no map service or key is involved.
+* **Matching:** countries are matched to shapes by ISO 3166-1 numeric code
+  (`iso_numeric` in `app/config/destinations.py`), never by name. Singapore and
+  Hong Kong are too small to draw at world scale, so they get a `map_point`
+  marker. A test checks that every destination has a shape or a marker.
+* **Colour:** one continuous blue scale, from light (score 0) to dark (score
+  100), reversed on dark backgrounds. Countries without data are neutral grey;
+  destinations that use your home currency are a darker grey.
+* **Interaction:** hover (or keyboard focus) shows the score, FX percentile,
+  vs-average and real purchasing power. Clicking opens the country page with the
+  current selection. On touch screens, the first tap shows the numbers and a
+  second tap (or "View") opens the page.
 
 ### Configuration
 

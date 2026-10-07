@@ -49,9 +49,12 @@
     return "base=" + encodeURIComponent(sel.base) + "&period=" + encodeURIComponent(sel.period);
   }
 
+  /* Leaderboard and World Map links carry the current selection, so switching keeps it. */
   function syncNav(sel) {
-    const nav = document.getElementById("nav-leaderboard");
-    if (nav) nav.href = "/?" + selectionQuery(sel);
+    for (const [id, path] of [["nav-leaderboard", "/"], ["nav-map", "/map"]]) {
+      const link = document.getElementById(id);
+      if (link) link.href = path + "?" + selectionQuery(sel);
+    }
   }
 
   /* Segmented controls for home currency (AUD USD …) and period (1Y 3Y 5Y 10Y).

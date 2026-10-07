@@ -89,6 +89,11 @@ def country_page(request: Request, slug: str):
     return templates.TemplateResponse(request, "country.html", {"active": "leaderboard", "destination": dest})
 
 
+@app.get("/map", response_class=HTMLResponse, include_in_schema=False)
+def map_page(request: Request):
+    return templates.TemplateResponse(request, "map.html", {"active": "map"})
+
+
 @app.get("/converter", response_class=HTMLResponse, include_in_schema=False)
 def converter_page(request: Request):
     return templates.TemplateResponse(request, "converter.html", {"active": "converter"})

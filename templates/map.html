@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Quantile · World Map{% endblock %}
+
+{% block content %}
+<h1>Where does your money go further?</h1>
+<p class="lede">
+  Countries are shaded by Quantile Score: how favourable today's exchange rate is compared with the selected
+  period, after Quantile's inflation adjustment.
+</p>
+
+<div class="toolbar">
+  <div class="control">
+    <span class="t-label" id="base-label">Home currency</span>
+    <div class="segmented" data-control="base" role="group" aria-labelledby="base-label"></div>
+  </div>
+  <div class="control">
+    <span class="t-label" id="period-label">Compared with</span>
+    <div class="segmented" data-control="period" role="group" aria-labelledby="period-label"></div>
+  </div>
+</div>
+
+<div class="board-meta" id="map-meta" aria-live="polite"></div>
+
+<div class="map-frame" id="map-frame">
+  <div class="map-scroll">
+    <div class="map" id="map" role="group" aria-label="World map of Quantile Scores. Supported destinations are links; the leaderboard lists the same scores as text."></div>
+  </div>
+  <div class="map-status" id="map-status">
+    <div class="state-title" id="map-status-title">Calculating global travel value…</div>
+    <div class="small" id="map-status-detail"></div>
+    <div class="progress" id="map-status-progress" aria-hidden="true"></div>
+    <div class="actions" id="map-status-actions" hidden></div>
+  </div>
+  <div class="map-tip" id="map-tip" role="tooltip" hidden></div>
+</div>
+
+<div class="map-foot">
+  <div class="legend" aria-label="Legend">
+    <div class="t-label">Quantile Score</div>
+    <div class="legend-scale">
+      <span class="small muted">Less favourable</span>
+      <div class="legend-bar-wrap">
+        <div class="legend-bar" id="legend-bar"></div>
+        <div class="legend-ticks num"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+      </div>
+      <span class="small muted">More favourable</span>
+    </div>
+    <div class="legend-keys small muted">
+      <span><i class="swatch swatch-none"></i>No Quantile data</span>
+      <span><i class="swatch swatch-home"></i>Uses your home currency</span>
+    </div>
+  </div>
+  <a class="small" id="view-leaderboard" href="/">View as leaderboard →</a>
+</div>
+
+<section class="section" aria-labelledby="top-title" id="top-section" hidden>
+  <div class="section-head"><h2 id="top-title">Top opportunities</h2><p class="small muted" id="top-sub"></p></div>
+  <ol class="top-list" id="top-list"></ol>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='vendor/d3-array.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/d3-geo.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/topojson-client.min.js') }}"></script>
+<script>window.QUANTILE_GEOMETRY = {{ url_for('static', path='vendor/countries-110m.json') | string | tojson }};</script>
+<script src="{{ url_for('static', path='js/map.js') }}"></script>
+{% endblock %}

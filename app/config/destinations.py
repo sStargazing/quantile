@@ -3,6 +3,11 @@
 Everything the ranking engine needs to know about *which* places to rank lives
 here. Add, remove or disable entries without touching the analytics code.
 
+`iso_numeric` (ISO 3166-1 numeric) links a destination to its shape on the
+World Map; the map geometry uses these ids, so countries are never matched by
+name. `map_point` (longitude, latitude) is set only for places too small to
+show as a shape at world scale; they are drawn as a marker instead.
+
 `cpi_code` / `cpi_index` identify the consumer-price series in the IMF CPI
 dataset (IMF.STA:CPI). `cpi_code` is normally the ISO 3166 alpha-3 code; the
 euro area aggregate is "G163" with the HICP index.
@@ -22,8 +27,10 @@ class Destination:
     flag: str
     region: str
     cpi_code: str
+    iso_numeric: str
     cpi_index: str = "CPI"
     enabled: bool = True
+    map_point: tuple[float, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -46,38 +53,38 @@ class Period:
 
 DESTINATIONS: tuple[Destination, ...] = (
     # Asia
-    Destination("japan", "Japan", "Japan", "JP", "JPY", "Japanese Yen", "🇯🇵", "Asia", "JPN"),
-    Destination("thailand", "Thailand", "Thailand", "TH", "THB", "Thai Baht", "🇹🇭", "Asia", "THA"),
-    Destination("indonesia", "Indonesia", "Indonesia (Bali)", "ID", "IDR", "Indonesian Rupiah", "🇮🇩", "Asia", "IDN"),
-    Destination("vietnam", "Vietnam", "Vietnam", "VN", "VND", "Vietnamese Dong", "🇻🇳", "Asia", "VNM"),
-    Destination("south-korea", "South Korea", "South Korea", "KR", "KRW", "South Korean Won", "🇰🇷", "Asia", "KOR"),
-    Destination("singapore", "Singapore", "Singapore", "SG", "SGD", "Singapore Dollar", "🇸🇬", "Asia", "SGP"),
-    Destination("malaysia", "Malaysia", "Malaysia", "MY", "MYR", "Malaysian Ringgit", "🇲🇾", "Asia", "MYS"),
-    Destination("philippines", "Philippines", "Philippines", "PH", "PHP", "Philippine Peso", "🇵🇭", "Asia", "PHL"),
-    Destination("china", "China", "China", "CN", "CNY", "Chinese Yuan", "🇨🇳", "Asia", "CHN"),
-    Destination("hong-kong", "Hong Kong", "Hong Kong", "HK", "HKD", "Hong Kong Dollar", "🇭🇰", "Asia", "HKG"),
-    Destination("india", "India", "India", "IN", "INR", "Indian Rupee", "🇮🇳", "Asia", "IND"),
+    Destination("japan", "Japan", "Japan", "JP", "JPY", "Japanese Yen", "🇯🇵", "Asia", "JPN", "392"),
+    Destination("thailand", "Thailand", "Thailand", "TH", "THB", "Thai Baht", "🇹🇭", "Asia", "THA", "764"),
+    Destination("indonesia", "Indonesia", "Indonesia (Bali)", "ID", "IDR", "Indonesian Rupiah", "🇮🇩", "Asia", "IDN", "360"),
+    Destination("vietnam", "Vietnam", "Vietnam", "VN", "VND", "Vietnamese Dong", "🇻🇳", "Asia", "VNM", "704"),
+    Destination("south-korea", "South Korea", "South Korea", "KR", "KRW", "South Korean Won", "🇰🇷", "Asia", "KOR", "410"),
+    Destination("singapore", "Singapore", "Singapore", "SG", "SGD", "Singapore Dollar", "🇸🇬", "Asia", "SGP", "702", map_point=(103.82, 1.35)),
+    Destination("malaysia", "Malaysia", "Malaysia", "MY", "MYR", "Malaysian Ringgit", "🇲🇾", "Asia", "MYS", "458"),
+    Destination("philippines", "Philippines", "Philippines", "PH", "PHP", "Philippine Peso", "🇵🇭", "Asia", "PHL", "608"),
+    Destination("china", "China", "China", "CN", "CNY", "Chinese Yuan", "🇨🇳", "Asia", "CHN", "156"),
+    Destination("hong-kong", "Hong Kong", "Hong Kong", "HK", "HKD", "Hong Kong Dollar", "🇭🇰", "Asia", "HKG", "344", map_point=(114.17, 22.32)),
+    Destination("india", "India", "India", "IN", "INR", "Indian Rupee", "🇮🇳", "Asia", "IND", "356"),
     # Middle East
-    Destination("uae", "United Arab Emirates", "United Arab Emirates", "AE", "AED", "UAE Dirham", "🇦🇪", "Middle East", "ARE"),
-    Destination("turkey", "Türkiye", "Türkiye", "TR", "TRY", "Turkish Lira", "🇹🇷", "Europe", "TUR"),
+    Destination("uae", "United Arab Emirates", "United Arab Emirates", "AE", "AED", "UAE Dirham", "🇦🇪", "Middle East", "ARE", "784"),
+    Destination("turkey", "Türkiye", "Türkiye", "TR", "TRY", "Turkish Lira", "🇹🇷", "Europe", "TUR", "792"),
     # Europe
-    Destination("united-kingdom", "United Kingdom", "United Kingdom", "GB", "GBP", "Pound Sterling", "🇬🇧", "Europe", "GBR"),
-    Destination("france", "France", "France", "FR", "EUR", "Euro", "🇫🇷", "Europe", "FRA"),
-    Destination("italy", "Italy", "Italy", "IT", "EUR", "Euro", "🇮🇹", "Europe", "ITA"),
-    Destination("spain", "Spain", "Spain", "ES", "EUR", "Euro", "🇪🇸", "Europe", "ESP"),
-    Destination("greece", "Greece", "Greece", "GR", "EUR", "Euro", "🇬🇷", "Europe", "GRC"),
-    Destination("switzerland", "Switzerland", "Switzerland", "CH", "CHF", "Swiss Franc", "🇨🇭", "Europe", "CHE"),
+    Destination("united-kingdom", "United Kingdom", "United Kingdom", "GB", "GBP", "Pound Sterling", "🇬🇧", "Europe", "GBR", "826"),
+    Destination("france", "France", "France", "FR", "EUR", "Euro", "🇫🇷", "Europe", "FRA", "250"),
+    Destination("italy", "Italy", "Italy", "IT", "EUR", "Euro", "🇮🇹", "Europe", "ITA", "380"),
+    Destination("spain", "Spain", "Spain", "ES", "EUR", "Euro", "🇪🇸", "Europe", "ESP", "724"),
+    Destination("greece", "Greece", "Greece", "GR", "EUR", "Euro", "🇬🇷", "Europe", "GRC", "300"),
+    Destination("switzerland", "Switzerland", "Switzerland", "CH", "CHF", "Swiss Franc", "🇨🇭", "Europe", "CHE", "756"),
     # Americas
-    Destination("united-states", "United States", "United States", "US", "USD", "US Dollar", "🇺🇸", "Americas", "USA"),
-    Destination("canada", "Canada", "Canada", "CA", "CAD", "Canadian Dollar", "🇨🇦", "Americas", "CAN"),
-    Destination("mexico", "Mexico", "Mexico", "MX", "MXN", "Mexican Peso", "🇲🇽", "Americas", "MEX"),
+    Destination("united-states", "United States", "United States", "US", "USD", "US Dollar", "🇺🇸", "Americas", "USA", "840"),
+    Destination("canada", "Canada", "Canada", "CA", "CAD", "Canadian Dollar", "🇨🇦", "Americas", "CAN", "124"),
+    Destination("mexico", "Mexico", "Mexico", "MX", "MXN", "Mexican Peso", "🇲🇽", "Americas", "MEX", "484"),
     # Oceania
-    Destination("new-zealand", "New Zealand", "New Zealand", "NZ", "NZD", "New Zealand Dollar", "🇳🇿", "Oceania", "NZL"),
-    Destination("australia", "Australia", "Australia", "AU", "AUD", "Australian Dollar", "🇦🇺", "Oceania", "AUS"),
-    Destination("fiji", "Fiji", "Fiji", "FJ", "FJD", "Fijian Dollar", "🇫🇯", "Oceania", "FJI"),
+    Destination("new-zealand", "New Zealand", "New Zealand", "NZ", "NZD", "New Zealand Dollar", "🇳🇿", "Oceania", "NZL", "554"),
+    Destination("australia", "Australia", "Australia", "AU", "AUD", "Australian Dollar", "🇦🇺", "Oceania", "AUS", "036"),
+    Destination("fiji", "Fiji", "Fiji", "FJ", "FJD", "Fijian Dollar", "🇫🇯", "Oceania", "FJI", "242"),
     # Africa
-    Destination("south-africa", "South Africa", "South Africa", "ZA", "ZAR", "South African Rand", "🇿🇦", "Africa", "ZAF"),
-    Destination("egypt", "Egypt", "Egypt", "EG", "EGP", "Egyptian Pound", "🇪🇬", "Africa", "EGY"),
+    Destination("south-africa", "South Africa", "South Africa", "ZA", "ZAR", "South African Rand", "🇿🇦", "Africa", "ZAF", "710"),
+    Destination("egypt", "Egypt", "Egypt", "EG", "EGP", "Egyptian Pound", "🇪🇬", "Africa", "EGY", "818"),
 )
 
 HOME_CURRENCIES: tuple[HomeCurrency, ...] = (
