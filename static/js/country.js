@@ -66,7 +66,7 @@
     $("country-alert").replaceChildren(...alerts);
 
     if (!d.fx) {
-      for (const id of ["figures", "stats", "bridge", "inflation-table", "components", "chart"]) $(id).replaceChildren();
+      for (const id of ["figures", "stats", "bridge", "inflation-table", "components", "chart", "extremes"]) $(id).replaceChildren();
       showBody();
       renderFacts(d);
       return;
@@ -91,6 +91,7 @@
       : d.chart.total_observations.toLocaleString() + " daily rates";
     $("show-real").disabled = !inf;
     renderChart();
+    renderExtremes(fx, quote);
     renderChartTable(d);
 
     $("stats-sub").textContent = fmt.date(fx.first_date) + " – " + fmt.date(fx.current_date) + " · " + fx.observations.toLocaleString() + " weekdays";
@@ -157,6 +158,22 @@
     if (rec.kind === "recent") return { date: rec.on, label: (rec.direction === "high" ? "Peak, " : "Low, ") + fmt.date(rec.on) };
     if (rec.since) return { date: rec.since, label: "Last this " + (rec.direction === "high" ? "strong" : "weak") + ", " + fmt.date(rec.since) };
     return null;
+  }
+
+  /* Period high / low under the chart, with how today compares. */
+  function renderExtremes(fx, quote) {
+    const vsToday = extreme => {
+      if (fx.current_rate === extreme) return "That's today's rate";
+      const pct = (fx.current_rate / extreme - 1) * 100;
+      return "Today is " + Math.abs(pct).toFixed(1) + "% " + (pct < 0 ? "below" : "above");
+    };
+    const block = (label, value, day) => el("div", { class: "extreme" },
+      el("div", { class: "t-label" }, label),
+      el("div", { class: "extreme-value num" }, fmt.money(value, quote)),
+      el("div", { class: "t-small" }, fmt.date(day), el("span", { class: "muted" }, " · " + vsToday(value))));
+    $("extremes").replaceChildren(
+      block("Period high", fx.high, fx.high_date),
+      block("Period low", fx.low, fx.low_date));
   }
 
   function renderChartTable(d) {

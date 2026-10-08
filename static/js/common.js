@@ -107,6 +107,20 @@
     if (a >= 10) return fmt2.format(v);
     return fmt4.format(v);
   }
+  /* An amount in a currency with its own symbol: ¥109.36, Rp12,465, €0.6199 (same precision as rate()). */
+  function money(v, code) {
+    if (v == null) return "—";
+    const a = Math.abs(v);
+    const digits = a >= 1000 ? 0 : a >= 10 ? 2 : 4;
+    try {
+      return new Intl.NumberFormat("en", {
+        style: "currency", currency: code, currencyDisplay: "narrowSymbol",
+        minimumFractionDigits: digits, maximumFractionDigits: digits,
+      }).format(v);
+    } catch (e) {
+      return rate(v) + " " + code;
+    }
+  }
   function signedPct(v, digits) {
     if (v == null) return "—";
     const f = digits === 0 ? fmt0 : fmt1;
@@ -201,7 +215,7 @@
   window.Q = {
     fetchJSON, readSelection, writeSelection, selectionQuery, syncNav, buildControls, setControls,
     MONTHS,
-    fmt: { rate, signedPct, signedPts, pct, score, ordinal, direction, date, month, cpiPeriod, buysVs, cap, lowerFirst, loadingSpan },
+    fmt: { rate, money, signedPct, signedPts, pct, score, ordinal, direction, date, month, cpiPeriod, buysVs, cap, lowerFirst, loadingSpan },
     el, notice, band,
   };
 })();
