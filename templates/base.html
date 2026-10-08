@@ -18,8 +18,22 @@
         <a href="/" id="nav-leaderboard" {% if active == 'leaderboard' %}aria-current="page"{% endif %}>Leaderboard</a>
         <a href="/map" id="nav-map" {% if active == 'map' %}aria-current="page"{% endif %}>World Map</a>
       </nav>
+      <button type="button" class="search-trigger" id="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K Meta+K">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span class="search-text">Search</span><kbd>/</kbd>
+      </button>
     </div>
   </header>
+
+  <div class="palette" id="palette" hidden>
+    <div class="palette-backdrop" data-close></div>
+    <div class="palette-panel" role="dialog" aria-modal="true" aria-label="Search destinations">
+      <input id="palette-input" type="text" placeholder="Search destinations…" autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list">
+      <ul class="palette-list" id="palette-list" role="listbox" aria-label="Destinations"></ul>
+      <div class="palette-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open analysis</span><span><kbd>Esc</kbd> close</span></div>
+    </div>
+  </div>
 
   <main class="wrap">
     {% block content %}{% endblock %}
@@ -34,6 +48,7 @@
   </footer>
 
   <script src="{{ asset('js/common.js') }}"></script>
+  <script src="{{ asset('js/search.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

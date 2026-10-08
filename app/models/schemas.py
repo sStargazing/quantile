@@ -38,6 +38,7 @@ class DestinationOut(BaseModel):
     enabled: bool
     iso_numeric: str  # ISO 3166-1 numeric; matches the World Map geometry ids
     map_point: tuple[float, float] | None = None  # (lon, lat) marker for places too small to draw
+    aliases: tuple[str, ...] = ()
 
 
 class OptionsResponse(BaseModel):

@@ -137,6 +137,14 @@ tests/
 Pages: `/` (Leaderboard), `/map` (World Map), `/country/{slug}?base=…&period=…`, and `/converter` (the
 original calculator, not linked from the header).
 
+### Destination search
+
+Press **/** (or ⌘K / Ctrl+K, or the header's Search button) on any page to find
+a destination by name, currency (code or name), ISO code or an alias from
+`aliases` in the destination config ("UK", "Dubai", "Bali"). Matching ignores
+accents. Arrow keys move through results; **Enter** opens the analysis with the
+current home currency and period (`static/js/search.js`).
+
 ### World Map
 
 `/map` shades each destination by the same Quantile Score as the Leaderboard. It

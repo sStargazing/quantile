@@ -31,6 +31,7 @@ class Destination:
     cpi_index: str = "CPI"
     enabled: bool = True
     map_point: tuple[float, float] | None = None
+    aliases: tuple[str, ...] = ()  # extra search terms, e.g. "UK", "Bali"
 
 
 @dataclass(frozen=True)
@@ -55,31 +56,31 @@ DESTINATIONS: tuple[Destination, ...] = (
     # Asia
     Destination("japan", "Japan", "Japan", "JP", "JPY", "Japanese Yen", "🇯🇵", "Asia", "JPN", "392"),
     Destination("thailand", "Thailand", "Thailand", "TH", "THB", "Thai Baht", "🇹🇭", "Asia", "THA", "764"),
-    Destination("indonesia", "Indonesia", "Indonesia (Bali)", "ID", "IDR", "Indonesian Rupiah", "🇮🇩", "Asia", "IDN", "360"),
+    Destination("indonesia", "Indonesia", "Indonesia (Bali)", "ID", "IDR", "Indonesian Rupiah", "🇮🇩", "Asia", "IDN", "360", aliases=("Bali",)),
     Destination("vietnam", "Vietnam", "Vietnam", "VN", "VND", "Vietnamese Dong", "🇻🇳", "Asia", "VNM", "704"),
-    Destination("south-korea", "South Korea", "South Korea", "KR", "KRW", "South Korean Won", "🇰🇷", "Asia", "KOR", "410"),
+    Destination("south-korea", "South Korea", "South Korea", "KR", "KRW", "South Korean Won", "🇰🇷", "Asia", "KOR", "410", aliases=("Korea",)),
     Destination("singapore", "Singapore", "Singapore", "SG", "SGD", "Singapore Dollar", "🇸🇬", "Asia", "SGP", "702", map_point=(103.82, 1.35)),
     Destination("malaysia", "Malaysia", "Malaysia", "MY", "MYR", "Malaysian Ringgit", "🇲🇾", "Asia", "MYS", "458"),
     Destination("philippines", "Philippines", "Philippines", "PH", "PHP", "Philippine Peso", "🇵🇭", "Asia", "PHL", "608"),
     Destination("china", "China", "China", "CN", "CNY", "Chinese Yuan", "🇨🇳", "Asia", "CHN", "156"),
-    Destination("hong-kong", "Hong Kong", "Hong Kong", "HK", "HKD", "Hong Kong Dollar", "🇭🇰", "Asia", "HKG", "344", map_point=(114.17, 22.32)),
+    Destination("hong-kong", "Hong Kong", "Hong Kong", "HK", "HKD", "Hong Kong Dollar", "🇭🇰", "Asia", "HKG", "344", map_point=(114.17, 22.32), aliases=("HK",)),
     Destination("india", "India", "India", "IN", "INR", "Indian Rupee", "🇮🇳", "Asia", "IND", "356"),
     # Middle East
-    Destination("uae", "United Arab Emirates", "United Arab Emirates", "AE", "AED", "UAE Dirham", "🇦🇪", "Middle East", "ARE", "784"),
-    Destination("turkey", "Türkiye", "Türkiye", "TR", "TRY", "Turkish Lira", "🇹🇷", "Europe", "TUR", "792"),
+    Destination("uae", "United Arab Emirates", "United Arab Emirates", "AE", "AED", "UAE Dirham", "🇦🇪", "Middle East", "ARE", "784", aliases=("UAE", "Dubai", "Abu Dhabi")),
+    Destination("turkey", "Türkiye", "Türkiye", "TR", "TRY", "Turkish Lira", "🇹🇷", "Europe", "TUR", "792", aliases=("Turkey",)),
     # Europe
-    Destination("united-kingdom", "United Kingdom", "United Kingdom", "GB", "GBP", "Pound Sterling", "🇬🇧", "Europe", "GBR", "826"),
+    Destination("united-kingdom", "United Kingdom", "United Kingdom", "GB", "GBP", "Pound Sterling", "🇬🇧", "Europe", "GBR", "826", aliases=("UK", "Britain", "England", "Scotland", "Wales")),
     Destination("france", "France", "France", "FR", "EUR", "Euro", "🇫🇷", "Europe", "FRA", "250"),
     Destination("italy", "Italy", "Italy", "IT", "EUR", "Euro", "🇮🇹", "Europe", "ITA", "380"),
     Destination("spain", "Spain", "Spain", "ES", "EUR", "Euro", "🇪🇸", "Europe", "ESP", "724"),
     Destination("greece", "Greece", "Greece", "GR", "EUR", "Euro", "🇬🇷", "Europe", "GRC", "300"),
     Destination("switzerland", "Switzerland", "Switzerland", "CH", "CHF", "Swiss Franc", "🇨🇭", "Europe", "CHE", "756"),
     # Americas
-    Destination("united-states", "United States", "United States", "US", "USD", "US Dollar", "🇺🇸", "Americas", "USA", "840"),
+    Destination("united-states", "United States", "United States", "US", "USD", "US Dollar", "🇺🇸", "Americas", "USA", "840", aliases=("USA", "US", "America")),
     Destination("canada", "Canada", "Canada", "CA", "CAD", "Canadian Dollar", "🇨🇦", "Americas", "CAN", "124"),
     Destination("mexico", "Mexico", "Mexico", "MX", "MXN", "Mexican Peso", "🇲🇽", "Americas", "MEX", "484"),
     # Oceania
-    Destination("new-zealand", "New Zealand", "New Zealand", "NZ", "NZD", "New Zealand Dollar", "🇳🇿", "Oceania", "NZL", "554"),
+    Destination("new-zealand", "New Zealand", "New Zealand", "NZ", "NZD", "New Zealand Dollar", "🇳🇿", "Oceania", "NZL", "554", aliases=("NZ", "Aotearoa")),
     Destination("australia", "Australia", "Australia", "AU", "AUD", "Australian Dollar", "🇦🇺", "Oceania", "AUS", "036"),
     Destination("fiji", "Fiji", "Fiji", "FJ", "FJD", "Fijian Dollar", "🇫🇯", "Oceania", "FJI", "242"),
     # Africa

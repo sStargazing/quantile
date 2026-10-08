@@ -68,3 +68,11 @@ def test_max_window_starts_where_every_destination_has_inflation_data():
     for key in list(data):
         data[key] = cpi(key[0], series(2019, 94), index_type=key[1])
     assert AnalysisService.max_window_start(CpiDataset(data), end) == date(2016, 10, 7)  # floor = 10 years
+
+
+def test_destinations_expose_search_aliases(make_client):
+    client = make_client()
+    by_id = {d["id"]: d for d in client.get("/api/destinations").json()}
+    assert "UK" in by_id["united-kingdom"]["aliases"]
+    assert "Bali" in by_id["indonesia"]["aliases"]
+    assert 'id="palette-input"' in client.get("/").text  # search is in the shared header
