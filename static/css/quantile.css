@@ -223,7 +223,7 @@ select {
 .board th:nth-child(1) { width: 44px; }
 .board th:nth-child(3) { width: 128px; }
 .board th:nth-child(4) { width: 128px; }
-.board th:nth-child(5) { width: 116px; }
+.board th:nth-child(5) { width: 148px; }
 .board th:nth-child(6) { width: 104px; }
 .board th:nth-child(7) { width: 196px; }
 .board tbody tr.row-link { cursor: pointer; }
@@ -243,6 +243,9 @@ select {
 .bar > i { display: block; height: 100%; background: var(--accent); }
 .spark { display: block; margin-left: auto; overflow: visible; }
 .unavailable td { color: var(--ink-muted); }
+.band { font-weight: 500; }
+.board .pct-band { display: block; font-size: 11px; line-height: 1.25; letter-spacing: .01em; }
+.figure .figure-band { font-size: 14px; letter-spacing: 0; margin-left: 8px; }
 
 .board-cards { display: none; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
 
@@ -414,7 +417,7 @@ footer.site-footer { border-top: 1px solid var(--hairline); padding-block: 20px 
 .map-status .progress { margin-top: 8px; }
 
 .map-tip {
-  position: absolute; z-index: 10; width: 240px; background: var(--surface); border: 1px solid var(--rule);
+  position: absolute; z-index: 10; width: 280px; background: var(--surface); border: 1px solid var(--rule);
   padding: 10px 12px; font-size: 13px; pointer-events: none;
 }
 .map-tip.pinned { pointer-events: auto; }

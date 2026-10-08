@@ -184,6 +184,14 @@
     return node;
   }
 
+  /* Percentile band ("Exceptionally strong"): green when your money buys more than usual,
+     red when less, grey when typical. The label always accompanies the colour. */
+  const BAND_CLASS = { exceptionally_strong: "up", strong: "up", typical: "muted", weak: "down", exceptionally_weak: "down" };
+  function band(b, extraClass) {
+    if (!b) return null;
+    return el("span", { class: "band " + BAND_CLASS[b.key] + (extraClass ? " " + extraClass : "") }, b.label);
+  }
+
   function notice(kind, title, items) {
     return el("div", { class: "notice " + kind, role: kind === "error" ? "alert" : "status" },
       title ? el("strong", null, title) : null,
@@ -194,6 +202,6 @@
     fetchJSON, readSelection, writeSelection, selectionQuery, syncNav, buildControls, setControls,
     MONTHS,
     fmt: { rate, signedPct, signedPts, pct, score, ordinal, direction, date, month, cpiPeriod, buysVs, cap, lowerFirst, loadingSpan },
-    el, notice,
+    el, notice, band,
   };
 })();

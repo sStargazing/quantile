@@ -77,7 +77,7 @@
         ? el("div", { class: "score-cell" }, bar(entry.quantile_score), el("span", { class: "score-num" }, fmt.score(entry.quantile_score)))
         : "Not ranked"),
       el("td", null, sparkline(entry.sparkline, entry.historical_average)),
-      el("td", null, fmt.ordinal(entry.fx_percentile)),
+      el("td", null, fmt.ordinal(entry.fx_percentile), Q.band(entry.fx_percentile_band, "pct-band")),
       el("td", { title: fmt.buysVs(sel.base, d.currency_code, entry.vs_historical_average_pct, avg) }, delta(entry.vs_historical_average_pct)),
       el("td", { title: ranked ? fmt.buysVs(sel.base, d.currency_code, entry.real_purchasing_power_pct, avg) + ", after inflation" : null },
         ranked ? delta(entry.real_purchasing_power_pct) : "—"));
@@ -98,7 +98,7 @@
           ? el("span", { class: "card-metrics" },
               el("span", null, "Real ", el("b", { class: fmt.direction(entry.real_purchasing_power_pct) }, fmt.signedPct(entry.real_purchasing_power_pct))),
               el("span", null, "vs avg ", el("b", { class: fmt.direction(entry.vs_historical_average_pct) }, fmt.signedPct(entry.vs_historical_average_pct))),
-              el("span", null, el("b", null, fmt.ordinal(entry.fx_percentile)), " percentile"))
+              el("span", null, el("b", null, fmt.ordinal(entry.fx_percentile)), " percentile · ", Q.band(entry.fx_percentile_band)))
           : el("span", { class: "card-metrics" }, entry.unavailable_reason)));
   }
 

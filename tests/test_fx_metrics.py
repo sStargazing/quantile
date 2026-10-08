@@ -139,3 +139,20 @@ def test_recent_extreme_ignores_unremarkable_swings():
     s = _dated([(date(2026, 4, 1), 115), (date(2026, 5, 1), 85), (date(2026, 7, 20), 110),
                 (date(2026, 8, 20), 90), (date(2026, 10, 7), 100)])
     assert recent_extreme(s) is None  # both recent extremes were beaten within the previous half-year
+
+
+@pytest.mark.parametrize("pct, key", [
+    (0, "exceptionally_weak"), (9.9, "exceptionally_weak"), (10, "weak"), (24.9, "weak"),
+    (25, "typical"), (50, "typical"), (75, "typical"), (75.1, "strong"), (89.9, "strong"),
+    (90, "exceptionally_strong"), (100, "exceptionally_strong"),
+])
+def test_percentile_bands(pct, key):
+    from app.analytics.fx_metrics import percentile_band
+
+    assert percentile_band(pct)[0] == key
+
+
+def test_pegged_currency_reads_as_typical():
+    from app.analytics.fx_metrics import percentile_band
+
+    assert percentile_band(percentile_rank([3.6725] * 100, 3.6725)) == ("typical", "Typical")

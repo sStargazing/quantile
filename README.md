@@ -220,6 +220,20 @@ provider quotes them.
 | 1-year change | vs the last observation on or before `T − 365 days` |
 | Volatility | std. dev. of daily log returns × √260, as % |
 
+**Percentile bands.** Every percentile also gets a plain-English label
+(`percentile_band`), shown next to the number across the app:
+
+| Percentile | Label |
+|---|---|
+| below 10 | Exceptionally weak |
+| 10 – 25 | Weak |
+| 25 – 75 | Typical |
+| 75 – 90 | Strong |
+| 90 and above | Exceptionally strong |
+
+"Strong" means your home currency buys more than usual. Labels are green
+(strong), grey (typical) or red (weak); the colour always comes with the text.
+
 **Ties count as half (mid-rank), a deliberate deviation from a plain
 "≤ today" count.** With "≤", a pegged currency (USD → AED, whose rate never
 moves) would sit at the 100th percentile. With mid-rank it sits at the 50th.

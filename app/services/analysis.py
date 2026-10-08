@@ -13,6 +13,7 @@ from app.analytics.fx_metrics import (
     FxSummary,
     annualised_volatility,
     change_over_days,
+    percentile_band,
     recent_extreme,
     record_context,
     share_below_and_equal,
@@ -276,6 +277,7 @@ class AnalysisService:
         )
         if r.fx:
             entry.fx_percentile = r.fx.percentile
+            entry.fx_percentile_band = _band(r.fx.percentile)
             entry.vs_historical_average_pct = r.fx.vs_mean_pct
             entry.current_rate = r.fx.current
             entry.current_date = r.fx.current_date
@@ -285,6 +287,7 @@ class AnalysisService:
         if r.real and r.score:
             entry.quantile_score = r.score.score
             entry.real_percentile = r.real.real_percentile
+            entry.real_percentile_band = _band(r.real.real_percentile)
             entry.inflation_adjustment_pts = r.real.inflation_adjustment_pts
             entry.real_purchasing_power_pct = r.real.real_vs_mean_pct
             entry.score_components = [schemas.ScoreComponentOut(**c.__dict__) for c in r.score.components]
@@ -351,6 +354,7 @@ class AnalysisService:
             low=fx.low,
             low_date=fx.low_date,
             percentile=fx.percentile,
+            percentile_band=_band(fx.percentile),
             share_below_pct=r.below_pct,
             share_equal_pct=r.equal_pct,
             vs_average_pct=fx.vs_mean_pct,
@@ -375,6 +379,7 @@ class AnalysisService:
                 inflation_adjustment_pts=real.inflation_adjustment_pts,
                 real_vs_average_pct=real.real_vs_mean_pct,
                 real_percentile=real.real_percentile,
+                real_percentile_band=_band(real.real_percentile),
                 real_average_rate=real.real_mean,
             )
             response.score = schemas.ScoreOut(
@@ -497,6 +502,11 @@ class AnalysisService:
             schemas.SourceOut(name=fx.name, description=fx.description, url=fx.url, used_for="Daily exchange rates"),
             schemas.SourceOut(name=cpi.name, description=cpi.description, url=cpi.url, used_for="Consumer price indices (inflation)"),
         ]
+
+
+def _band(percentile: float) -> schemas.PercentileBand:
+    key, label = percentile_band(percentile)
+    return schemas.PercentileBand(key=key, label=label)
 
 
 def _month(d: date | None) -> tuple[int, int] | None:

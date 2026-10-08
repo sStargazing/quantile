@@ -66,6 +66,11 @@ class DataQuality(BaseModel):
     warnings: list[str]
 
 
+class PercentileBand(BaseModel):
+    key: Literal["exceptionally_weak", "weak", "typical", "strong", "exceptionally_strong"]
+    label: str  # "Exceptionally strong"
+
+
 class ScoreComponentOut(BaseModel):
     key: str
     label: str
@@ -83,8 +88,10 @@ class LeaderboardEntry(BaseModel):
     shares_currency_with: list[str]
     quantile_score: float | None = None
     fx_percentile: float | None = None
+    fx_percentile_band: PercentileBand | None = None
     vs_historical_average_pct: float | None = None
     real_percentile: float | None = None
+    real_percentile_band: PercentileBand | None = None
     inflation_adjustment_pts: float | None = None
     real_purchasing_power_pct: float | None = None
     current_rate: float | None = None
@@ -119,6 +126,7 @@ class FxStats(BaseModel):
     low: float
     low_date: date
     percentile: float
+    percentile_band: PercentileBand
     share_below_pct: float  # earlier days with a strictly lower rate
     share_equal_pct: float  # earlier days with exactly the same rate (pegged currencies)
     vs_average_pct: float
@@ -148,6 +156,7 @@ class InflationAnalysis(BaseModel):
     inflation_adjustment_pts: float
     real_vs_average_pct: float
     real_percentile: float
+    real_percentile_band: PercentileBand
     real_average_rate: float
 
 

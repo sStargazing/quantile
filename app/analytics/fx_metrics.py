@@ -35,6 +35,29 @@ def percentile_rank(values: Sequence[float], current: float) -> float:
     return 100.0 * (below + 0.5 * equal) / len(values)
 
 
+def percentile_band(percentile: float) -> tuple[str, str]:
+    """Plain-English reading of a percentile: (key, label).
+
+        below 10    exceptionally weak
+        10 – 25     weak
+        25 – 75     typical
+        75 – 90     strong
+        90 and up   exceptionally strong
+
+    "Strong" means your home currency buys more than usual. A pegged currency
+    sits at the 50th percentile, so it reads as typical.
+    """
+    if percentile < 10:
+        return "exceptionally_weak", "Exceptionally weak"
+    if percentile < 25:
+        return "weak", "Weak"
+    if percentile <= 75:
+        return "typical", "Typical"
+    if percentile < 90:
+        return "strong", "Strong"
+    return "exceptionally_strong", "Exceptionally strong"
+
+
 def share_below_and_equal(history: Sequence[float], current: float) -> tuple[float, float]:
     """(% of `history` strictly below `current`, % exactly equal). Used for plain-English statements."""
     if not history:

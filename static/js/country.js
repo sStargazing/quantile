@@ -19,7 +19,8 @@
   function figure(label, value, unit, note, cls) {
     return el("div", { class: "figure" },
       el("div", { class: "t-label" }, label),
-      el("div", { class: "t-figure" + (cls ? " " + cls : "") }, value, unit ? el("span", { class: "unit" }, unit) : null),
+      el("div", { class: "t-figure" + (cls ? " " + cls : "") }, value,
+        unit ? (typeof unit === "string" ? el("span", { class: "unit" }, unit) : unit) : null),
       note ? el("div", { class: "t-small" }, note) : null);
   }
 
@@ -75,7 +76,7 @@
     $("figures").replaceChildren(
       figure("1 " + base + " buys", fmt.rate(fx.current_rate), quote, "Reference rate, " + fmt.date(fx.current_date)),
       figure(avg, fmt.rate(fx.average), quote, fmt.buysVs(base, quote, fx.vs_average_pct, avg)),
-      figure("FX percentile", fmt.ordinal(fx.percentile), null, fx.share_equal_pct >= 50
+      figure("FX percentile", fmt.ordinal(fx.percentile), Q.band(fx.percentile_band, "figure-band"), fx.share_equal_pct >= 50
         ? "Unchanged on " + Math.floor(fx.share_equal_pct) + "% of " + fx.observations.toLocaleString() + " trading days"
         : "Better than " + Math.floor(fx.share_below_pct) + "% of " + fx.observations.toLocaleString() + " trading days"),
       inf
@@ -100,7 +101,7 @@
       statRow("Median", fmt.rate(fx.median)),
       statRow("High", fmt.rate(fx.high), fmt.date(fx.high_date)),
       statRow("Low", fmt.rate(fx.low), fmt.date(fx.low_date)),
-      statRow("FX percentile", fmt.ordinal(fx.percentile)),
+      statRow("FX percentile", el("span", null, fmt.ordinal(fx.percentile), " · ", Q.band(fx.percentile_band))),
       statRow("Today vs average", signed(fx.vs_average_pct)),
       statRow("Today vs median", signed(fx.vs_median_pct)),
       statRow("Change over 1 year", fx.one_year_change_pct == null ? "—" : signed(fx.one_year_change_pct)),
@@ -113,7 +114,7 @@
         statRow(inf.destination.country + " inflation", fmt.signedPct(inf.destination.cumulative_pct)),
         statRow("Inflation adjustment", el("span", { class: fmt.direction(inf.inflation_adjustment_pts) }, fmt.signedPts(inf.inflation_adjustment_pts))),
         statRow("Real purchasing-power change", signed(inf.real_vs_average_pct)),
-        statRow("Inflation-adjusted percentile", fmt.ordinal(inf.real_percentile)));
+        statRow("Inflation-adjusted percentile", el("span", null, fmt.ordinal(inf.real_percentile), " · ", Q.band(inf.real_percentile_band))));
     }
     $("stats").replaceChildren(...rows);
 
