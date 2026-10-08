@@ -96,3 +96,15 @@ def test_max_period_uses_one_common_window(make_client):
     detail = client.get(f"/api/country/{top}", params={"base": "AUD", "period": "max"}).json()
     assert detail["headline"].endswith("since Jan 2014.")
     assert detail["fx"]["first_date"] >= "2014-01-01"
+
+
+def test_static_assets_are_versioned_by_content(make_client):
+    import re
+
+    client = make_client()
+    for page in ("/", "/map", "/country/japan"):
+        html = client.get(page).text
+        urls = re.findall(r'(?:src|href)="(/static/[^"]+)"', html)
+        assert urls and all(re.search(r"\?v=[0-9a-f]{10}$", u) for u in urls), urls
+        for u in urls:
+            assert client.get(u).status_code == 200

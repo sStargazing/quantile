@@ -4,8 +4,10 @@ Run with:  uvicorn app.main:app --reload
 """
 
 import asyncio
+import hashlib
 import logging
 from contextlib import asynccontextmanager
+from functools import lru_cache
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
@@ -59,6 +61,25 @@ app.include_router(leaderboard.router)
 app.include_router(countries.router)
 app.mount("/static", StaticFiles(directory=ROOT_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=ROOT_DIR / "templates")
+
+
+@lru_cache(maxsize=256)
+def _content_hash(path: str, mtime_ns: int) -> str:
+    return hashlib.sha256((ROOT_DIR / "static" / path).read_bytes()).hexdigest()[:10]
+
+
+def asset(path: str) -> str:
+    """URL for a static file with a content hash, e.g. /static/js/common.js?v=1a2b3c4d5e.
+
+    Without it, a browser can pair a freshly deployed script with a cached copy
+    of another one after a deploy. A changed file gets a new URL, so it is
+    always fetched again.
+    """
+    mtime_ns = (ROOT_DIR / "static" / path).stat().st_mtime_ns
+    return f"/static/{path}?v={_content_hash(path, mtime_ns)}"
+
+
+templates.env.globals["asset"] = asset
 
 
 @app.exception_handler(ProviderError)

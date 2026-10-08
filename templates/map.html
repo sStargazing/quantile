@@ -60,9 +60,9 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='vendor/d3-array.min.js') }}"></script>
-<script src="{{ url_for('static', path='vendor/d3-geo.min.js') }}"></script>
-<script src="{{ url_for('static', path='vendor/topojson-client.min.js') }}"></script>
-<script>window.QUANTILE_GEOMETRY = {{ url_for('static', path='vendor/countries-110m.json') | string | tojson }};</script>
-<script src="{{ url_for('static', path='js/map.js') }}"></script>
+<script src="{{ asset('vendor/d3-array.min.js') }}"></script>
+<script src="{{ asset('vendor/d3-geo.min.js') }}"></script>
+<script src="{{ asset('vendor/topojson-client.min.js') }}"></script>
+<script>window.QUANTILE_GEOMETRY = {{ asset('vendor/countries-110m.json') | tojson }};</script>
+<script src="{{ asset('js/map.js') }}"></script>
 {% endblock %}
