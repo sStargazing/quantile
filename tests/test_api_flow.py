@@ -108,3 +108,15 @@ def test_static_assets_are_versioned_by_content(make_client):
         assert urls and all(re.search(r"\?v=[0-9a-f]{10}$", u) for u in urls), urls
         for u in urls:
             assert client.get(u).status_code == 200
+
+
+def test_page_titles_name_the_page(make_client):
+    import re
+
+    client = make_client()
+    title = lambda path: re.search(r"<title>(.*?)</title>", client.get(path).text).group(1)
+    assert title("/") == "Travel Value Leaderboard — Quantile"
+    assert title("/map") == "World Map — Quantile"
+    assert title("/country/japan") == "Japan (JPY) — Quantile"
+    assert title("/country/indonesia") == "Indonesia (IDR) — Quantile"
+    assert title("/country/turkey") == "Türkiye (TRY) — Quantile"
